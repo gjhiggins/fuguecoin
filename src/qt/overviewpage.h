@@ -27,6 +27,7 @@ public:
     void setClientModel(ClientModel *clientModel);
     void setWalletModel(WalletModel *walletModel);
     void showOutOfSyncWarning(bool fShow);
+    void updatePlot(int count);
 
 public slots:
     void setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 immatureBalance);
@@ -41,6 +42,8 @@ private:
     qint64 currentBalance;
     qint64 currentUnconfirmedBalance;
     qint64 currentImmatureBalance;
+    QVector<double> vX;
+    QVector<double> vY;
 
     TxViewDelegate *txdelegate;
     TransactionFilterProxy *filter;
@@ -49,6 +52,7 @@ private slots:
     void updateDisplayUnit();
     void handleTransactionClicked(const QModelIndex &index);
     void updateAlerts(const QString &warnings);
+
 };
 
 #endif // OVERVIEWPAGE_H

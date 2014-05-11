@@ -15,7 +15,7 @@ BitcoinAmountField::BitcoinAmountField(QWidget *parent):
 {
     amount = new QDoubleSpinBox(this);
     amount->setLocale(QLocale::c());
-    amount->setDecimals(8);
+    amount->setDecimals(9);
     amount->installEventFilter(this);
     amount->setMaximumWidth(170);
     amount->setSingleStep(0.001);
@@ -60,7 +60,9 @@ bool BitcoinAmountField::validate()
     bool valid = true;
     if (amount->value() == 0.0)
         valid = false;
-    if (valid && !BitcoinUnits::parse(currentUnit, text(), 0))
+    else if (!BitcoinUnits::parse(currentUnit, text(), 0))
+        valid = false;
+    else if (amount->value() > BitcoinUnits::maxAmount(currentUnit))
         valid = false;
 
     setValid(valid);
@@ -90,6 +92,8 @@ bool BitcoinAmountField::eventFilter(QObject *object, QEvent *event)
     {
         // Clear invalid flag on focus
         setValid(true);
+	//added to consume the event and prevent an infinite loop
+	return true;
     }
     else if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
     {

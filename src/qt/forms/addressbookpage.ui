@@ -32,6 +32,9 @@
      <property name="toolTip">
       <string>Double-click to edit address or label</string>
      </property>
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
      <property name="tabKeyNavigation">
       <bool>false</bool>
      </property>

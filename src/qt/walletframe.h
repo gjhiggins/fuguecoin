@@ -17,8 +17,9 @@ class WalletStack;
 class WalletFrame : public QFrame
 {
     Q_OBJECT
+
 public:
-    explicit WalletFrame(BitcoinGUI *_gui);
+    explicit WalletFrame(BitcoinGUI *_gui = 0);
     ~WalletFrame();
 
     void setClientModel(ClientModel *clientModel);
@@ -68,6 +69,9 @@ public slots:
      @see WalletModel::EncryptionStatus
      */
     void setEncryptionStatus();
+
+    /** Update the plot on the overview (home) page */
+    void updatePlot(int count);
 };
 
 #endif // WALLETFRAME_H

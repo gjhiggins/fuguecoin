@@ -51,6 +51,11 @@ Value GetNetworkHashPS(int lookup, int height) {
     return (boost::int64_t)(workDiff.getdouble() / timeDiff);
 }
 
+void ShutdownRPCMining()
+{
+    delete pMiningKey; pMiningKey = NULL;
+}
+
 Value getnetworkhashps(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
