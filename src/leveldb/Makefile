@@ -31,7 +31,6 @@ TESTHARNESS = ./util/testharness.o $(TESTUTIL)
 
 TESTS = \
 	arena_test \
-	autocompact_test \
 	bloom_test \
 	c_test \
 	cache_test \
@@ -114,9 +113,6 @@ leveldbutil: db/leveldb_main.o $(LIBOBJECTS)
 
 arena_test: util/arena_test.o $(LIBOBJECTS) $(TESTHARNESS)
 	$(CXX) $(LDFLAGS) util/arena_test.o $(LIBOBJECTS) $(TESTHARNESS) -o $@ $(LIBS)
-
-autocompact_test: db/autocompact_test.o $(LIBOBJECTS) $(TESTHARNESS)
-	$(CXX) $(LDFLAGS) db/autocompact_test.o $(LIBOBJECTS) $(TESTHARNESS) -o $@ $(LIBS)
 
 bloom_test: util/bloom_test.o $(LIBOBJECTS) $(TESTHARNESS)
 	$(CXX) $(LDFLAGS) util/bloom_test.o $(LIBOBJECTS) $(TESTHARNESS) -o $@ $(LIBS)
