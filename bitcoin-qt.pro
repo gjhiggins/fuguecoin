@@ -18,6 +18,17 @@ CONFIG += thread
 #    BOOST_INCLUDE_PATH, BOOST_LIB_PATH, BDB_INCLUDE_PATH,
 #    BDB_LIB_PATH, OPENSSL_INCLUDE_PATH and OPENSSL_LIB_PATH respectively
 
+#BOOST_LIB_SUFFIX=-mgw46-mt-sd-1_54
+#BOOST_INCLUDE_PATH=C:\deps\boost_1_54_0
+#BOOST_LIB_PATH=C:\deps\boost_1_54_0\stage\lib
+#BDB_INCLUDE_PATH=C:\deps\db-4.8.30.NC\build_unix
+#BDB_LIB_PATH=C:\deps\db-4.8.30.NC\build_unix
+#OPENSSL_INCLUDE_PATH=C:\deps\openssl-1.0.1e\include
+#OPENSSL_LIB_PATH=C:\deps\openssl-1.0.1e
+#MINIUPNPC_LIB_SUFFIX=-miniupnpc
+#MINIUPNPC_INCLUDE_PATH=C:\deps\miniupnpc
+#MINIUPNPC_LIB_PATH=C:\deps\miniupnpc
+
 OBJECTS_DIR = build
 MOC_DIR = build
 UI_DIR = build
@@ -211,7 +222,9 @@ HEADERS += src/qt/bitcoingui.h \
     src/leveldb.h \
     src/threadsafety.h \
     src/limitedmap.h \
-    src/qt/splashscreen.h
+    src/qt/splashscreen.h \
+    src/sph_fugue.h \
+    src/sph_types.h
 
 SOURCES += src/qt/bitcoin.cpp \
     src/qt/bitcoingui.cpp \
@@ -279,7 +292,8 @@ SOURCES += src/qt/bitcoin.cpp \
     src/noui.cpp \
     src/leveldb.cpp \
     src/txdb.cpp \
-    src/qt/splashscreen.cpp
+    src/qt/splashscreen.cpp \
+	src/fugue.c 
 
 RESOURCES += src/qt/bitcoin.qrc
 
@@ -371,7 +385,7 @@ isEmpty(BOOST_INCLUDE_PATH) {
     macx:BOOST_INCLUDE_PATH = /opt/local/include
 }
 
-win32:DEFINES += WIN32
+win32:DEFINES += WIN32 WIN32_LEAN_AND_MEAN
 win32:RC_FILE = src/qt/res/bitcoin-qt.rc
 
 win32:!contains(MINGW_THREAD_BUGFIX, 0) {

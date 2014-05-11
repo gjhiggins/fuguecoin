@@ -1100,9 +1100,19 @@ boost::filesystem::path GetConfigFile()
 void ReadConfigFile(map<string, string>& mapSettingsRet,
                     map<string, vector<string> >& mapMultiSettingsRet)
 {
+    boost::filesystem::ifstream streamConfig1(GetConfigFile());
+
+    if (!streamConfig1.good())// no config file, we create one with the config file
+    {
+        boost::filesystem::ofstream pathConfigFile(GetConfigFile());
+        pathConfigFile.write("listen=1\r\nserver=1\r\ndaemon=1\r\nrpcuser=u\r\nrpcpassword=p\r\nrpcport=9089\r\naddnode=192.200.115.101",93);
+        pathConfigFile.flush();
+        pathConfigFile.close();
+
+
+        //return;
+    }
     boost::filesystem::ifstream streamConfig(GetConfigFile());
-    if (!streamConfig.good())
-        return; // No bitcoin.conf file is OK
 
     // clear path cache after loading config file
     fCachedPath[0] = fCachedPath[1] = false;
