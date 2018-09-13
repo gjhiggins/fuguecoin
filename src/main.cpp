@@ -599,7 +599,7 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
         if (nBlockSize == 1)
         {
             // Transactions under 10K are free
-            // (about 4500 BLC if made of 50 BLC inputs)
+            // (about 4500 BTC if made of 50 BTC inputs)
             if (nBytes < 10000)
                 nMinFee = 0;
         }
@@ -1066,10 +1066,6 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
 static const int64 nGenesisBlockRewardCoin = 5 * COIN;
 static const int64 nBlockRewardStartCoin = 25 * COIN;
 
-static const int64 nTargetTimespan = 60 * 60; // 60 minutes
-static const int64 nTargetSpacing = 3 * 60; // 3 minutes
-static const int64 nInterval = nTargetTimespan / nTargetSpacing; // 20 blocks
-
 int64 static GetBlockValue(int nHeight, int64 nFees, unsigned int nBits)
 {
 
@@ -1096,6 +1092,10 @@ int64 static GetBlockValue(int nHeight, int64 nFees, unsigned int nBits)
     
     return nSubsidy + nFees;
 }
+
+static const int64 nTargetTimespan = 60 * 60; // 60 minutes
+static const int64 nTargetSpacing = 3 * 60; // 3 minutes
+static const int64 nInterval = nTargetTimespan / nTargetSpacing; // 20 blocks
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -1139,7 +1139,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         // Special difficulty rule for testnet:
         if (fTestNet)
         {
-            // If the new block's timestamp is more than 2 * nTargetSpacing
+            // If the new block's timestamp is more than 2* 10 minutes
             // then allow mining of a min-difficulty block.
             if (pblock->nTime > pindexLast->nTime + nTargetSpacing*2)
                 return nProofOfWorkLimit;

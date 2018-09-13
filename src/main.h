@@ -1741,17 +1741,13 @@ public:
         return CheckProofOfWork(GetBlockHash(), nBits);
     }
 
-    enum 
-    { 
-      nMedianTimeSpan=11,
-    };
+    enum { nMedianTimeSpan=11 };
 
     int64 GetMedianTimePast() const
     {
         int64 pmedian[nMedianTimeSpan];
         int64* pbegin = &pmedian[nMedianTimeSpan];
         int64* pend = &pmedian[nMedianTimeSpan];
-
 
         const CBlockIndex* pindex = this;
         for (int i = 0; i < nMedianTimeSpan && pindex; i++, pindex = pindex->pprev)
