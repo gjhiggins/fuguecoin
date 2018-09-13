@@ -16,7 +16,7 @@ OptionsModel::OptionsModel(QObject *parent) :
 bool static ApplyProxySettings()
 {
     QSettings settings;
-    CService addrProxy(settings.value("addrProxy", "127.0.0.1:9050").toString().toStdString());
+    CService addrProxy(settings.value("addrProxy", "127.0.0.1:9042").toString().toStdString());
     int nSocksVersion(settings.value("nSocksVersion", 5).toInt());
     if (!settings.value("fUseProxy", false).toBool()) {
         addrProxy = CService();
@@ -42,14 +42,14 @@ void OptionsModel::Init()
     QSettings settings;
 
     // These are Qt-only settings:
-    nDisplayUnit = settings.value("nDisplayUnit", BitcoinUnits::BTC).toInt();
+    nDisplayUnit = settings.value("nDisplayUnit", BitcoinUnits::BLC).toInt();
     bDisplayAddresses = settings.value("bDisplayAddresses", false).toBool();
     fMinimizeToTray = settings.value("fMinimizeToTray", false).toBool();
     fMinimizeOnClose = settings.value("fMinimizeOnClose", false).toBool();
     nTransactionFee = settings.value("nTransactionFee").toLongLong();
     language = settings.value("language", "").toString();
 
-    // These are shared with core Bitcoin; we want
+    // These are shared with core Blakecoin; we want
     // command-line options to override the GUI settings:
     if (settings.contains("fUseUPnP"))
         SoftSetBoolArg("-upnp", settings.value("fUseUPnP").toBool());
@@ -179,7 +179,7 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             if (GetProxy(NET_IPV4, proxy))
                 return QVariant(proxy.first.GetPort());
             else
-                return QVariant(9050);
+                return QVariant(9042);
         }
         case ProxySocksVersion: {
             proxyType proxy;
@@ -232,7 +232,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case ProxyIP: {
             proxyType proxy;
-            proxy.first = CService("127.0.0.1", 9050);
+            proxy.first = CService("127.0.0.1", 9042);
             GetProxy(NET_IPV4, proxy);
 
             CNetAddr addr(value.toString().toStdString());
@@ -243,7 +243,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         break;
         case ProxyPort: {
             proxyType proxy;
-            proxy.first = CService("127.0.0.1", 9050);
+            proxy.first = CService("127.0.0.1", 9042);
             GetProxy(NET_IPV4, proxy);
 
             proxy.first.SetPort(value.toInt());
