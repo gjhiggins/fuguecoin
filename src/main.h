@@ -11,6 +11,7 @@
 #include "script.h"
 
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 class CWallet;
 class CBlock;
@@ -50,6 +51,10 @@ static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
 /** No amount larger than this (in satoshi) is valid */
 static const int64 MAX_MONEY = 84000000 * COIN;
+/** Dust Soft Limit, allowed with additional fee per output */
+static const int64 DUST_SOFT_LIMIT = 100000; // 0.001 B
+/** Dust Hard Limit, ignored as wallet inputs (mininput default) */
+static const int64 DUST_HARD_LIMIT = 1000;   // 0.00001 B mininput
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 120;
@@ -100,6 +105,7 @@ extern unsigned int nCoinCacheSize;
 
 // Settings
 extern int64 nTransactionFee;
+extern int64 nMinimumInputValue;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64 nMinDiskSpace = 52428800;
@@ -1750,17 +1756,13 @@ public:
         return CheckProofOfWork(GetBlockHash(), nBits);
     }
 
-    enum 
-    { 
-      nMedianTimeSpan=11,
-    };
+    enum { nMedianTimeSpan=11 };
 
     int64 GetMedianTimePast() const
     {
         int64 pmedian[nMedianTimeSpan];
         int64* pbegin = &pmedian[nMedianTimeSpan];
         int64* pend = &pmedian[nMedianTimeSpan];
-
 
         const CBlockIndex* pindex = this;
         for (int i = 0; i < nMedianTimeSpan && pindex; i++, pindex = pindex->pprev)
@@ -2232,6 +2234,9 @@ struct CBlockTemplate
     std::vector<int64_t> vTxSigOps;
 };
 
+#if defined(_M_IX86) || defined(__i386__) || defined(__i386) || defined(_M_X64) || defined(__x86_64__) || defined(_M_AMD64)
+extern unsigned int cpuid_edx;
+#endif
 
 
 

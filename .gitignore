@@ -1,0 +1,41 @@
+# git
+.gitignore
+# app
+src/*.exe
+src/fuguecoin
+src/fuguecoind
+src/test_fuguecoin
+src/obj
+.*.swp
+*.*~*
+*.bak
+*.rej
+*.orig
+*.o
+*.patch
+.fuguecoin
+*.ts
+*.d.ts
+.ts
+
+# Compilation and Qt preprocessor part
+*.qm
+Makefile
+fuguecoin-qt
+Fuguecoin-Qt.app
+
+# Unit-tests
+Makefile.test
+fuguecoin-qt_test
+
+# Resources cpp
+qrc_*.cpp
+
+# Qt creator
+*.pro.user
+
+# Mac specific
+.DS_Store
+build
+
+!src/leveldb-*/Makefile
