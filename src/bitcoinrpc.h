@@ -123,7 +123,9 @@ public:
 };
 
 extern const CRPCTable tableRPC;
-extern CReserveKey* pMiningKey;
+
+extern void InitRPCMining();
+extern void ShutdownRPCMining();
 
 extern void InitRPCMining();
 extern void ShutdownRPCMining();

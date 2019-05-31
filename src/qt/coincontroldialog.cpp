@@ -306,7 +306,7 @@ void CoinControlDialog::clipboardBytes()
     GUIUtil::setClipboard(ui->labelCoinControlBytes->text());
 }
 
-// copy label "Priority" to clipboard
+// copy label " PRIority" to clipboard
 void CoinControlDialog::clipboardPriority()
 {
     GUIUtil::setClipboard(ui->labelCoinControlPriority->text());
@@ -580,7 +580,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     }
 
     // actually update labels
-    int nDisplayUnit = BitcoinUnits::BLC;
+    int nDisplayUnit = BitcoinUnits::BTC;
     if (model && model->getOptionsModel())
         nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
 

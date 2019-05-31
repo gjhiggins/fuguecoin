@@ -145,9 +145,6 @@ OBJS= \
     obj/fugue.o
 
 
-	
-
-
 all: fuguecoind
 
 test check: test_fuguecoin FORCE
