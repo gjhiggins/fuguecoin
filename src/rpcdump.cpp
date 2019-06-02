@@ -132,58 +132,6 @@ Value dumpallprivkeys(const Array& params, bool fHelp)
 
 }
 
-/*
-Value dumpbootstrap(const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() < 1 || params.size() > 3)
-        throw runtime_error(
-            "dumpbootstrap <destination> <endblock> [startblock=0]\n"
-            "Creates a bootstrap format block dump of the blockchain in destination, which can be a directory or a path with filename, up to the given endblock number.\n"
-            "Optional <startblock> is the first block number to dump.");
-
-    string strDest = params[0].get_str();
-    int nEndBlock = params[1].get_int();
-    if (nEndBlock < 0 || nEndBlock > nBestHeight)
-        throw runtime_error("End block number out of range.");
-
-    int nStartBlock = 0;
-    if (params.size() > 2)
-        nStartBlock = params[2].get_int();
-    if (nStartBlock < 0 || nStartBlock > nEndBlock)
-        throw runtime_error("Start block number out of range.");
-
-    boost::filesystem::path pathDest(strDest);
-    if (boost::filesystem::is_directory(pathDest))
-        pathDest /= "bootstrap.dat";
-
-    try {
-        FILE* file = fopen(pathDest.string().c_str(), "wb");
-        if (!file)
-            throw JSONRPCError(-1, "Error: Could not open bootstrap file for writing.");
-
-        CAutoFile fileout = CAutoFile(file, SER_DISK, CLIENT_VERSION);
-        if (!fileout)
-            throw JSONRPCError(-1, "Error: Could not open bootstrap file for writing.");
-
-        unsigned char pchMessageStart[4];
-        GetMessageStart(pchMessageStart, true);
-
-        for (int nHeight = nStartBlock; nHeight <= nEndBlock; nHeight++)
-        {
-            CBlock block;
-            CBlockIndex* pblockindex = FindBlockByHeight(nHeight);
-            block.ReadFromDisk(pblockindex, true);
-            fileout << FLATDATA(pchMessageStart) << fileout.GetSerializeSize(block) << block;
-        }
-
-    } catch(const boost::filesystem::filesystem_error &e) {
-        throw JSONRPCError(-1, "Error: Bootstrap dump failed!");
-    }
-
-    return "bootstrap file created";
-}
-*/
-
 Value dumpbootstrap(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)

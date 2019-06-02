@@ -111,6 +111,11 @@ void WalletFrame::gotoMiningPage()
     walletStack->gotoMiningPage();
 }
 
+void WalletFrame::gotoMessagePage()
+{
+    walletStack->gotoMessagePage();
+}
+
 void WalletFrame::gotoSignMessageTab(QString addr)
 {
     WalletView *walletView = currentWalletView();

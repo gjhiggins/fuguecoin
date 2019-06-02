@@ -240,6 +240,14 @@ void BitcoinGUI::createActions(bool fIsTestnet)
     miningAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
     tabGroup->addAction(miningAction);
 
+    messageAction = new QAction(QIcon(":/icons/edit"), tr("&Messaging"), this);
+    messageAction->setStatusTip(tr("Sign/Verify, Encrypt/Decrypt"));
+    messageAction->setToolTip(messageAction->statusTip());
+    messageAction->setToolTip(messageAction->statusTip());
+    messageAction->setCheckable(true);
+    messageAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    tabGroup->addAction(messageAction);
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -252,6 +260,8 @@ void BitcoinGUI::createActions(bool fIsTestnet)
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
     connect(miningAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(miningAction, SIGNAL(triggered()), this, SLOT(gotoMiningPage()));
+    connect(messageAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(messageAction, SIGNAL(triggered()), this, SLOT(gotoMessagePage()));
 
     quitAction = new QAction(QIcon(":/icons/quit"), tr("E&xit"), this);
     quitAction->setStatusTip(tr("Quit application"));
@@ -353,6 +363,7 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
     toolbar->addAction(miningAction);
+    toolbar->addAction(messageAction);
 }
 
 void BitcoinGUI::setClientModel(ClientModel *clientModel)
@@ -584,6 +595,11 @@ void BitcoinGUI::gotoMiningPage()
     if (walletFrame) walletFrame->gotoMiningPage();
 }
 
+void BitcoinGUI::gotoMessagePage()
+{
+    if (walletFrame) walletFrame->gotoMessagePage();
+}
+
 void BitcoinGUI::setNumConnections(int count)
 {
     QString icon;
@@ -698,7 +714,7 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
         if(GetBoolArg("-chart", true))
         {
             // miningPage->updatePlot();
-            walletFrame->overviewPage->updatePlot();
+            // walletFrame->overviewPage->updatePlot();
         }
     }
 }

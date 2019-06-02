@@ -15,7 +15,9 @@ class TransactionView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
+class MessagePage;
 class SignVerifyMessageDialog;
+class EncryptDecryptMessageDialog;
 class Notificator;
 class RPCConsole;
 class BlockExplorer;
@@ -70,6 +72,7 @@ public:
     QAction * getReceiveCoinsAction() { return receiveCoinsAction; }
     QAction * getSendCoinsAction() { return sendCoinsAction; }
     QAction * getMiningAction() { return miningAction; }
+    QAction * getMessageAction() { return messageAction; }
 
 protected:
     void changeEvent(QEvent *e);
@@ -109,6 +112,7 @@ private:
     QAction *openRPCConsoleAction;
     QAction *openBlockExplorerAction;
     QAction *miningAction;
+    QAction *messageAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
@@ -185,6 +189,9 @@ private slots:
     void gotoSendCoinsPage(QString addr = "");
     /** Switch to mining page */
     void gotoMiningPage();
+
+    /** switch to message page*/
+    void gotoMessagePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

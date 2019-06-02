@@ -162,6 +162,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/aboutdialog.h \
     src/qt/editaddressdialog.h \
     src/qt/bitcoinaddressvalidator.h \
+    src/qt/messagepage.h \
     src/alert.h \
     src/addrman.h \
     src/base58.h \
@@ -239,7 +240,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/blockexplorer.h \
     src/qt/miningpage.h \
     src/sph_fugue.h \
-    src/sph_types.h
+    src/sph_types.h \
+    src/ecies/ecies.h
 
 SOURCES += src/qt/bitcoin.cpp \
     src/qt/bitcoingui.cpp \
@@ -250,6 +252,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/coincontroldialog.cpp \
     src/qt/coincontroltreewidget.cpp \
     src/qt/addressbookpage.cpp \
+    src/qt/messagepage.cpp \
     src/qt/signverifymessagedialog.cpp \
     src/qt/aboutdialog.cpp \
     src/qt/editaddressdialog.cpp \
@@ -314,7 +317,10 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/qcustomplot.cpp \
     src/qt/blockexplorer.cpp \
     src/qt/miningpage.cpp \
-    src/fugue.c
+    src/fugue.c \
+    src/ecies/ecies.c \
+    src/ecies/kdf.c \
+    src/ecies/secure.c
 
 RESOURCES += src/qt/bitcoin.qrc
 
@@ -332,7 +338,8 @@ FORMS += src/qt/forms/sendcoinsdialog.ui \
     src/qt/forms/optionsdialog.ui \
     src/qt/forms/intro.ui \
     src/qt/forms/blockexplorer.ui \
-    src/qt/forms/miningpage.ui
+    src/qt/forms/miningpage.ui \
+    src/qt/forms/messagepage.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h
