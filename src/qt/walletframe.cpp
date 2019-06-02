@@ -39,6 +39,7 @@ void WalletFrame::setClientModel(ClientModel *clientModel)
 {
     this->clientModel = clientModel;
     walletStack->setClientModel(clientModel);
+    walletStack->updatePlot();
 }
 
 bool WalletFrame::addWallet(const QString& name, WalletModel *walletModel)
@@ -105,6 +106,11 @@ void WalletFrame::gotoSendCoinsPage(QString addr)
     walletStack->gotoSendCoinsPage(addr);
 }
 
+void WalletFrame::gotoMiningPage()
+{
+    walletStack->gotoMiningPage();
+}
+
 void WalletFrame::gotoSignMessageTab(QString addr)
 {
     WalletView *walletView = currentWalletView();
@@ -157,5 +163,10 @@ void WalletFrame::setEncryptionStatus()
 WalletView *WalletFrame::currentWalletView()
 {
     return qobject_cast<WalletView*>(walletStack->currentWidget());
+}
+
+void WalletFrame::updatePlot()
+{
+    walletStack->updatePlot();
 }
 

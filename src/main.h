@@ -101,6 +101,7 @@ extern bool fReindex;
 extern bool fBenchmark;
 extern int nScriptCheckThreads;
 extern bool fTxIndex;
+extern bool fAddrIndex;
 extern unsigned int nCoinCacheSize;
 
 // Settings
@@ -114,6 +115,7 @@ static const uint64 nMinDiskSpace = 52428800;
 class CReserveKey;
 class CCoinsDB;
 class CBlockTreeDB;
+class CAddressDB;
 struct CDiskBlockPos;
 class CCoins;
 class CTxUndo;
@@ -190,6 +192,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash);
 bool VerifySignature(const CCoins& txFrom, const CTransaction& txTo, unsigned int nIn, unsigned int flags, int nHashType);
 /** Abort with a message */
 bool AbortNode(const std::string &msg);
+/** Get block reward */
+int64 GetBlockValue(int nHeight, int64 nFees);
 
 
 
@@ -2226,6 +2230,9 @@ extern CCoinsViewCache *pcoinsTip;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
+
+/** Global variable that points to the address database (protected by cs_main) */
+extern CAddressDB *paddressmap;
 
 struct CBlockTemplate
 {

@@ -16,6 +16,7 @@
 #include "transactionview.h"
 #include "overviewpage.h"
 #include "askpassphrasedialog.h"
+#include "miningpage.h"
 #include "ui_interface.h"
 
 #include <QHBoxLayout>
@@ -59,6 +60,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
 
     sendCoinsPage = new SendCoinsDialog(gui);
 
+    miningPage = new MiningPage(gui);
+
     signVerifyMessageDialog = new SignVerifyMessageDialog(gui);
 
     addWidget(overviewPage);
@@ -66,6 +69,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     addWidget(addressBookPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(miningPage);
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), this, SLOT(gotoHistoryPage()));
@@ -121,6 +125,7 @@ void WalletView::setWalletModel(WalletModel *walletModel)
         receiveCoinsPage->setModel(walletModel->getAddressTableModel());
         sendCoinsPage->setModel(walletModel);
         signVerifyMessageDialog->setModel(walletModel);
+        miningPage->setModel(walletModel);
 
         setEncryptionStatus();
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
@@ -181,6 +186,12 @@ void WalletView::gotoSendCoinsPage(QString addr)
 
     if (!addr.isEmpty())
         sendCoinsPage->setAddress(addr);
+}
+
+void WalletView::gotoMiningPage()
+{
+    gui->getMiningAction()->setChecked(true);
+    setCurrentWidget(miningPage);
 }
 
 void WalletView::gotoSignMessageTab(QString addr)
@@ -273,3 +284,10 @@ void WalletView::unlockWallet()
         dlg.exec();
     }
 }
+
+void WalletView::updatePlot()
+{
+    miningPage->updatePlot();
+    overviewPage->updatePlot();
+}
+

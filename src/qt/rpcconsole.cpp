@@ -254,8 +254,10 @@ void RPCConsole::setClientModel(ClientModel *model)
     this->clientModel = model;
     if(model)
     {
-        // Subscribe to information, replies, messages, errors
+        // Keep up to date with client by subscribing to information, replies, messages, errors
+        setNumConnections(model->getNumConnections());
         connect(model, SIGNAL(numConnectionsChanged(int)), this, SLOT(setNumConnections(int)));
+        setNumBlocks(model->getNumBlocks(), model->getNumBlocksOfPeers());
         connect(model, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
 
         // Provide initial values

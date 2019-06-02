@@ -4,11 +4,10 @@ macx:TARGET = "Fuguecoin-Qt"
 VERSION = 0.8.6
 INCLUDEPATH += src src/json src/qt
 QT += core gui network
-#DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE BOOST_THREAD_PROVIDES_GENERIC_SHARED_MUTEX_ON_WIN __NO_SYSTEM_INCLUDES
+DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE QT_NO_PRINTER BOOST_NO_CXX11_SCOPED_ENUMS ENABLE_PRECOMPILED_HEADERS=OFF
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
 CONFIG += thread
 
@@ -68,14 +67,6 @@ win32:QMAKE_LFLAGS *= -Wl,--dynamicbase -Wl,--nxcompat
 # on Windows: enable GCC large address aware linker flag
 win32:QMAKE_LFLAGS *= -Wl,--large-address-aware
 
-# use: qmake "USE_QRCODE=1"
-# libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
-contains(USE_QRCODE, 1) {
-    message(Building with QRCode support)
-    DEFINES += USE_QRCODE
-    LIBS += -lqrencode
-}
-
 # use: qmake "USE_UPNP=1" ( enabled by default; default)
 #  or: qmake "USE_UPNP=0" (disabled by default)
 #  or: qmake "USE_UPNP=-" (not supported)
@@ -98,6 +89,14 @@ contains(USE_DBUS, 1) {
     message(Building with DBUS (Freedesktop notifications) support)
     DEFINES += USE_DBUS
     QT += dbus
+}
+
+# use: qmake "USE_QRCODE=1"
+# libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
+contains(USE_QRCODE, 1) {
+    message(Building with QRCode support)
+    DEFINES += USE_QRCODE
+    macx:win32:LIBS += -lqrencode
 }
 
 # use: qmake "USE_IPV6=1" ( enabled by default; default)
@@ -235,6 +234,10 @@ HEADERS += src/qt/bitcoingui.h \
     src/limitedmap.h \
     src/qt/macnotificationhandler.h \
     src/qt/splashscreen.h \
+    src/qt/intro.h \
+    src/qt/qcustomplot.h \
+    src/qt/blockexplorer.h \
+    src/qt/miningpage.h \
     src/sph_fugue.h \
     src/sph_types.h
 
@@ -307,7 +310,11 @@ SOURCES += src/qt/bitcoin.cpp \
     src/leveldb.cpp \
     src/txdb.cpp \
     src/qt/splashscreen.cpp \
-    src/fugue.c 
+    src/qt/intro.cpp \
+    src/qt/qcustomplot.cpp \
+    src/qt/blockexplorer.cpp \
+    src/qt/miningpage.cpp \
+    src/fugue.c
 
 RESOURCES += src/qt/bitcoin.qrc
 
@@ -322,7 +329,10 @@ FORMS += src/qt/forms/sendcoinsdialog.ui \
     src/qt/forms/sendcoinsentry.ui \
     src/qt/forms/askpassphrasedialog.ui \
     src/qt/forms/rpcconsole.ui \
-    src/qt/forms/optionsdialog.ui
+    src/qt/forms/optionsdialog.ui \
+    src/qt/forms/intro.ui \
+    src/qt/forms/blockexplorer.ui \
+    src/qt/forms/miningpage.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h
@@ -331,12 +341,17 @@ FORMS += src/qt/forms/qrcodedialog.ui
 }
 
 contains(BITCOIN_QT_TEST, 1) {
+SOURCES -= src/qt/bitcoin.cpp
 SOURCES += src/qt/test/test_main.cpp \
-    src/qt/test/uritests.cpp
-HEADERS += src/qt/test/uritests.h
+           src/qt/test/uritests.cpp \
+           src/qt/qrcodedialog.cpp
+HEADERS += src/qt/test/uritests.h \
+           src/qt/qrcodedialog.h
 DEPENDPATH += src/qt/test
 QT += testlib
-TARGET = bitcoin-qt_test
+DEFINES += USE_QRCODE
+LIBS += -lqrencode
+TARGET = fuguecoin-qt_test
 DEFINES += BITCOIN_QT_TEST
   macx: CONFIG -= app_bundle
 }
@@ -364,6 +379,7 @@ QMAKE_EXTRA_COMPILERS += TSQM
 OTHER_FILES += README.md \
     doc/*.rst \
     doc/*.txt \
+    doc/*.md \
     src/qt/res/bitcoin-qt.rc \
     src/test/*.cpp \
     src/test/*.h \
@@ -398,6 +414,14 @@ isEmpty(BOOST_LIB_PATH) {
 
 isEmpty(BOOST_INCLUDE_PATH) {
     macx:BOOST_INCLUDE_PATH = /opt/local/include
+}
+
+isEmpty(OPENSSL_LIB_PATH) {
+    macx:OPENSSL_LIB_PATH = /opt/local/lib/
+}
+
+isEmpty(OPENSSL_INCLUDE_PATH) {
+    macx:OPENSSL_INCLUDE_PATH = /opt/local/include/openssl
 }
 
 win32:DEFINES += WIN32 WIN32_LEAN_AND_MEAN
@@ -446,6 +470,9 @@ contains(RELEASE, 1) {
         # Linux: turn dynamic linking back on for c/c++ runtime libraries
         LIBS += -Wl,-Bdynamic
     }
+}
+contains(USE_QRCODE, 1) {
+    !macx:!win32:LIBS += -lqrencode
 }
 
 system($$QMAKE_LRELEASE -silent $$TRANSLATIONS)

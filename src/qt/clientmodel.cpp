@@ -7,6 +7,7 @@
 
 #include "alert.h"
 #include "main.h"
+#include "init.h" // for pwalletMain
 #include "checkpoints.h"
 #include "ui_interface.h"
 
@@ -50,6 +51,11 @@ int ClientModel::getNumBlocksAtStartup()
     return numBlocksAtStartup;
 }
 
+ClientModel::MiningType ClientModel::getMiningType() const
+{
+    return miningType;
+}
+
 QDateTime ClientModel::getLastBlockDate() const
 {
     if (pindexBest)
@@ -58,6 +64,11 @@ QDateTime ClientModel::getLastBlockDate() const
         return QDateTime::fromTime_t(1231006505); // Genesis block's time
     else
         return QDateTime::fromTime_t(1296688602); // Genesis block's time (testnet)
+}
+
+bool ClientModel::getMiningStarted() const
+{
+    return miningStarted;
 }
 
 double ClientModel::getVerificationProgress() const
@@ -133,6 +144,20 @@ enum BlockSource ClientModel::getBlockSource() const
 int ClientModel::getNumBlocksOfPeers() const
 {
     return GetNumBlocksOfPeers();
+}
+
+void ClientModel::setMining(MiningType type, bool mining, int threads, int hashrate)
+{
+    if (type == SoloMining && mining != miningStarted)
+    {
+        GenerateBitcoins(mining ? 1 : 0, pwalletMain);
+    }
+    miningType = type;
+    miningStarted = mining;
+//    WriteSetting("miningStarted", mining);
+//    WriteSetting("fLimitProcessors", 1);
+//    WriteSetting("nLimitProcessors", threads);
+    emit miningChanged(mining, hashrate);
 }
 
 QString ClientModel::getStatusBarWarnings() const

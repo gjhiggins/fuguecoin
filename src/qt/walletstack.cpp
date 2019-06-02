@@ -110,6 +110,13 @@ void WalletStack::gotoSendCoinsPage(QString addr)
         i.value()->gotoSendCoinsPage(addr);
 }
 
+void WalletStack::gotoMiningPage()
+{
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->gotoMiningPage();
+}
+
 void WalletStack::gotoSignMessageTab(QString addr)
 {
     WalletView *walletView = (WalletView*)currentWidget();
@@ -158,4 +165,13 @@ void WalletStack::setCurrentWallet(const QString& name)
     WalletView *walletView = mapWalletViews.value(name);
     setCurrentWidget(walletView);
     walletView->setEncryptionStatus();
+}
+
+void WalletStack::updatePlot()
+{
+    //we can't be sure that the view has loaded, so this needs
+    //to be loaded in a manner that fails gracefully
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->updatePlot();
 }

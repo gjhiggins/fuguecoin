@@ -100,6 +100,7 @@ void Shutdown()
     StopRPCThreads();
 	ShutdownRPCMining();
     bitdb.Flush(false);
+    GenerateBitcoins(false, NULL);
     StopNode();
     {
         LOCK(cs_main);
@@ -109,9 +110,12 @@ void Shutdown()
             pblocktree->Flush();
         if (pcoinsTip)
             pcoinsTip->Flush();
+        if (paddressmap)
+            paddressmap->Flush();
         delete pcoinsTip; pcoinsTip = NULL;
         delete pcoinsdbview; pcoinsdbview = NULL;
         delete pblocktree; pblocktree = NULL;
+        delete paddressmap; paddressmap = NULL;
     }
     bitdb.Flush(true);
     boost::filesystem::remove(GetPidFile());
@@ -253,7 +257,7 @@ int main(int argc, char* argv[])
 {
     bool fRet = false;
 
-    // Connect fuguecoind signal handlers
+    // Connect bitcoind signal handlers
     noui_connect();
 
     fRet = AppInit(argc, argv);
@@ -347,7 +351,7 @@ std::string HelpMessage()
 #endif
         "  -rpcuser=<user>        " + _("Username for JSON-RPC connections") + "\n" +
         "  -rpcpassword=<pw>      " + _("Password for JSON-RPC connections") + "\n" +
-        "  -rpcport=<port>        " + _("Listen for JSON-RPC connections on <port> (default: 8332 or testnet: 18332)") + "\n" +
+        "  -rpcport=<port>        " + _("Listen for JSON-RPC connections on <port> (default: 9089 or testnet: 19089)") + "\n" +
         "  -rpcallowip=<ip>       " + _("Allow JSON-RPC connections from specified IP address") + "\n" +
 #ifndef QT_GUI
         "  -rpcconnect=<ip>       " + _("Send commands to node running on <ip> (default: 127.0.0.1)") + "\n" +
@@ -363,6 +367,7 @@ std::string HelpMessage()
         "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 288, 0 = all)") + "\n" +
         "  -checklevel=<n>        " + _("How thorough the block verification is (0-4, default: 3)") + "\n" +
         "  -txindex               " + _("Maintain a full transaction index (default: 0)") + "\n" +
+        "  -addrindex             " + _("Maintain address index (default: 0)") + "\n" +
         "  -loadblock=<file>      " + _("Imports blocks from external blk000??.dat file") + "\n" +
         "  -reindex               " + _("Rebuild block chain index from current blk000??.dat files") + "\n" +
         "  -par=<n>               " + _("Set the number of script verification threads (up to 16, 0 = auto, <0 = leave that many cores free, default: 0)") + "\n" +
@@ -412,6 +417,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             nFile++;
         }
         pblocktree->WriteReindexing(false);
+        paddressmap->WriteReindexing(false);
         fReindex = false;
         printf("Reindexing finished\n");
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
@@ -866,13 +872,18 @@ bool AppInit2(boost::thread_group& threadGroup)
                 delete pcoinsTip;
                 delete pcoinsdbview;
                 delete pblocktree;
+                delete paddressmap;
 
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
                 pcoinsTip = new CCoinsViewCache(*pcoinsdbview);
+                paddressmap = new CAddressDB(nBlockTreeDBCache, false, fReindex);
 
                 if (fReindex)
+                {
                     pblocktree->WriteReindexing(true);
+                    paddressmap->WriteReindexing(true);
+                }
 
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
@@ -882,6 +893,12 @@ bool AppInit2(boost::thread_group& threadGroup)
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex()) {
                     strLoadError = _("Error initializing block database");
+                    break;
+                }
+
+                // Check for changed -addrindex state
+                if (fAddrIndex != GetBoolArg("-addrindex", false)) {
+                    strLoadError = _("You need to rebuild the database using -reindex to change -addrindex");
                     break;
                 }
 
