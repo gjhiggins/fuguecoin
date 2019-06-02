@@ -9,12 +9,17 @@
 #include "transactionfilterproxy.h"
 #include "guiutil.h"
 #include "guiconstants.h"
+#include "main.h"
+#include "bitcoinrpc.h"
+#include "util.h"
 
 #include <QAbstractItemDelegate>
 #include <QPainter>
 
 #define DECORATION_SIZE 64
 #define NUM_ITEMS 3
+
+extern json_spirit::Value GetNetworkHashPS(int lookup, int height);
 
 class TxViewDelegate : public QAbstractItemDelegate
 {
@@ -51,7 +56,6 @@ public:
             QBrush brush = qvariant_cast<QBrush>(value);
             foreground = brush.color();
         }
-
         painter->setPen(foreground);
         painter->drawText(addressRect, Qt::AlignLeft|Qt::AlignVCenter, address);
 
@@ -118,6 +122,56 @@ OverviewPage::OverviewPage(QWidget *parent) :
 
     // start with displaying the "out of sync" warnings
     showOutOfSyncWarning(true);
+
+    if(GetBoolArg("-chart", false))
+    {
+        // setup Plot
+
+        // give the axes some labels:
+        ui->workplot->xAxis->setLabel("Last 7 days (10080 blocks)");
+        ui->workplot->yAxis->setLabel("Difficulty");
+        ui->workplot->yAxis2->setLabel("Hash rate");
+        ui->workplot->yAxis2->setVisible(true);
+
+        // set axes label fonts:
+        QFont label = font();
+        ui->workplot->yAxis->setLabelFont(label);
+        ui->workplot->yAxis->setTickLabelFont(label);
+        ui->workplot->yAxis2->setTickLabelFont(label);
+
+        ui->workplot->xAxis->setTickLabels(false);
+        /* If block height is rendered ... */
+        // ui->workplot->xAxis->setLabelFont(label);
+        // ui->workplot->xAxis->setTickLabelFont(label);
+        // ui->workplot->xAxis->setTickLabelRotation(15);
+        // ui->workplot->xAxis->setNumberFormat("f");
+
+        ui->workplot->xAxis->setAutoSubTicks(false);
+        ui->workplot->yAxis->setAutoSubTicks(false);
+        ui->workplot->yAxis2->setAutoSubTicks(false);
+        ui->workplot->xAxis->setSubTickCount(0);
+        ui->workplot->yAxis->setSubTickCount(0);
+        ui->workplot->yAxis2->setSubTickCount(0);
+
+        // create graph
+        ui->workplot->addGraph(ui->workplot->xAxis, ui->workplot->yAxis);
+        // set the pens
+        ui->workplot->graph(0)->setPen(QPen(QColor(255, 165, 18)));
+        ui->workplot->graph(0)->setLineStyle(QCPGraph::lsNone);
+        ui->workplot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, QColor(255, 165, 18), 1));
+
+        // create graph
+        ui->workplot->addGraph(ui->workplot->xAxis, ui->workplot->yAxis2);
+        // set the pens
+        ui->workplot->graph(1)->setPen(QPen(QColor(145, 137, 255)));
+        ui->workplot->graph(1)->setLineStyle(QCPGraph::lsNone);
+        ui->workplot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, QColor(145, 137, 255), 1));
+
+    }
+    else
+    {
+        ui->workplot->setVisible(false);
+    }
 }
 
 void OverviewPage::handleTransactionClicked(const QModelIndex &index)
@@ -182,7 +236,7 @@ void OverviewPage::setWalletModel(WalletModel *model)
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
     }
 
-    // update the display unit, to not use the default ("FC")
+    // update the display unit, to not use the default ("BTC")
     updateDisplayUnit();
 }
 
@@ -211,3 +265,55 @@ void OverviewPage::showOutOfSyncWarning(bool fShow)
     ui->labelWalletStatus->setVisible(fShow);
     ui->labelTransactionsStatus->setVisible(fShow);
 }
+
+void OverviewPage::updatePlot()
+{
+    // Double Check to make sure we don't try to update the plot when it is disabled
+    if (!GetBoolArg("-chart", false)) {
+        return;
+    }
+
+    int numLookBack = 10080;
+    double diffMax = 0;
+    double hashMax = 0;
+    CBlockIndex* pindex = pindexBest;
+    int height = nBestHeight;
+    int xStart = std::max<int>(height-numLookBack, 0) + 1;
+    int xEnd = height;
+
+    // Start at the end and walk backwards
+    int i = numLookBack-1;
+    int x = xEnd;
+
+    // This should be a noop if the size is already 2000
+    vX.resize(numLookBack);
+    vY.resize(numLookBack);
+    vX2.resize(numLookBack);
+    vY2.resize(numLookBack);
+
+    CBlockIndex* itr = pindex;
+    while(i >= 0 && itr != NULL)
+    {
+        vX[i] = itr->nHeight;
+        vY[i] = GetDifficulty(itr);
+        vY2[i] = (double)GetNetworkHashPS(120, itr->nHeight).get_int64()/1000;
+        diffMax = std::max<double>(diffMax, vY[i]);
+        hashMax = std::max<double>(hashMax, vY2[i]);
+
+        itr = itr->pprev;
+        i--;
+        x--;
+    }
+
+    ui->workplot->graph(0)->setData(vX, vY);
+    ui->workplot->graph(1)->setData(vX, vY2);
+
+    // set axes ranges, so we see all data:
+    ui->workplot->xAxis->setRange((double)xStart, (double)xEnd);
+    ui->workplot->yAxis->setRange(0, diffMax+(diffMax/10));
+    ui->workplot->yAxis2->setRange(0, hashMax+(hashMax/10));
+
+    ui->workplot->replot();
+
+}
+

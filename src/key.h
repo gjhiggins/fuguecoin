@@ -12,6 +12,7 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "hash.h"
+#include "util.h"
 
 #include <openssl/ec.h> // for EC_KEY definition
 
@@ -96,6 +97,7 @@ public:
     std::vector<unsigned char> Raw() const {
         return vchPubKey;
     }
+    void EncryptData(const std::vector<unsigned char> &plaindata, std::vector<unsigned char> &encdata);
 };
 
 
@@ -156,6 +158,10 @@ public:
     bool VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig);
 
     bool IsValid();
+
+    void EncryptData(const std::vector<unsigned char> &plaindata, std::vector<unsigned char> &encdata);
+
+    void DecryptData(const std::vector<unsigned char> &encdata, std::vector<unsigned char> &plaindata);
 };
 
 #endif

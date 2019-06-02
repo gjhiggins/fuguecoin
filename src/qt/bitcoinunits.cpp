@@ -109,7 +109,7 @@ QString BitcoinUnits::format(int unit, qint64 n, bool fPlus)
         quotient_str.insert(0, '-');
     else if (fPlus && n > 0)
         quotient_str.insert(0, '+');
-    return quotient_str + QString(".") + remainder_str;
+    return quotient_str + QString(".") + remainder_str + QString("0"); //adding additional '0' as spacer for implementing additional decimals
 }
 
 QString BitcoinUnits::formatWithUnit(int unit, qint64 amount, bool plussign)

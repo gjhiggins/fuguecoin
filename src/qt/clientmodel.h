@@ -20,7 +20,7 @@ enum BlockSource {
     BLOCK_SOURCE_NETWORK
 };
 
-/** Model for Fuguecoin network client. */
+/** Model for Bitcoin network client. */
 class ClientModel : public QObject
 {
     Q_OBJECT
@@ -29,11 +29,20 @@ public:
     explicit ClientModel(OptionsModel *optionsModel, QObject *parent = 0);
     ~ClientModel();
 
+    enum MiningType
+    {
+        SoloMining,
+        PoolMining
+    };
+
     OptionsModel *getOptionsModel();
 
     int getNumConnections() const;
     int getNumBlocks() const;
     int getNumBlocksAtStartup();
+    MiningType getMiningType() const;
+    int getMiningThreads() const;
+    bool getMiningStarted() const;
 
     double getVerificationProgress() const;
     QDateTime getLastBlockDate() const;
@@ -49,6 +58,8 @@ public:
     //! Return warnings to be displayed in status bar
     QString getStatusBarWarnings() const;
 
+    void setMining(MiningType type, bool mining, int threads, int hashrate);
+
     QString formatFullVersion() const;
     QString formatBuildDate() const;
     bool isReleaseVersion() const;
@@ -62,6 +73,9 @@ private:
     int cachedNumBlocksOfPeers;
 	bool cachedReindexing;
 	bool cachedImporting;
+    MiningType miningType;
+    int miningThreads;
+    bool miningStarted;
 
     int numBlocksAtStartup;
 
@@ -74,6 +88,7 @@ signals:
     void numConnectionsChanged(int count);
     void numBlocksChanged(int count, int countOfPeers);
     void alertsChanged(const QString &warnings);
+    void miningChanged(bool mining, int count);
 
     //! Asynchronous message notification
     void message(const QString &title, const QString &message, unsigned int style);

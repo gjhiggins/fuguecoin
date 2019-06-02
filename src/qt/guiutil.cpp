@@ -28,6 +28,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#if BOOST_FILESYSTEM_VERSION >= 3
+#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+#endif
+
 #ifdef WIN32
 #ifdef _WIN32_WINNT
 #undef _WIN32_WINNT
@@ -44,6 +48,10 @@
 #include "shlwapi.h"
 #include "shlobj.h"
 #include "shellapi.h"
+#endif
+
+#if BOOST_FILESYSTEM_VERSION >= 3
+static boost::filesystem::detail::utf8_codecvt_facet utf8;
 #endif
 
 namespace GUIUtil {
@@ -141,7 +149,7 @@ bool parseBitcoinURI(QString uri, SendCoinsRecipient *out)
     //    which will lower-case it (and thus invalidate the address).
     if(uri.startsWith("fuguecoin://"))
     {
-        uri.replace(0, 10, "fuguecoin:");
+        uri.replace(0, 12, "fuguecoin:");
     }
     QUrl uriInstance(uri);
     return parseBitcoinURI(uriInstance, out);
@@ -306,7 +314,7 @@ boost::filesystem::path static StartupShortcutPath()
 
 bool GetStartOnSystemStartup()
 {
-    // check for Fuguecoin.lnk
+    // check for Bitcoin.lnk
     return boost::filesystem::exists(StartupShortcutPath());
 }
 
@@ -433,6 +441,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
     return true;
 }
 
+
 #elif defined(Q_OS_MAC)
 // based on: https://github.com/Mozketo/LaunchAtLoginController/blob/master/LaunchAtLoginController.m
 
@@ -509,6 +518,7 @@ HelpMessageBox::HelpMessageBox(QWidget *parent) :
         "  -lang=<lang>           " + tr("Set language, for example \"de_DE\" (default: system locale)") + "\n" +
         "  -min                   " + tr("Start minimized") + "\n" +
         "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n";
+        "  -chart                 " + tr("Show the difficulty chart (default: 1)") + "\n";
 
     setWindowTitle(tr("Fuguecoin-Qt"));
     setTextFormat(Qt::PlainText);
@@ -534,5 +544,28 @@ void HelpMessageBox::showOrPrint()
         printToConsole();
 #endif
 }
+
+#if BOOST_FILESYSTEM_VERSION >= 3
+boost::filesystem::path qstringToBoostPath(const QString &path)
+{
+    return boost::filesystem::path(path.toStdString(), utf8);
+}
+
+QString boostPathToQString(const boost::filesystem::path &path)
+{
+    return QString::fromStdString(path.string(utf8));
+}
+#else
+#warning Conversion between boost path and QString can use invalid character encoding with boost_filesystem v2 and older
+boost::filesystem::path qstringToBoostPath(const QString &path)
+{
+    return boost::filesystem::path(path.toStdString());
+}
+
+QString boostPathToQString(const boost::filesystem::path &path)
+{
+    return QString::fromStdString(path.string());
+}
+#endif
 
 } // namespace GUIUtil

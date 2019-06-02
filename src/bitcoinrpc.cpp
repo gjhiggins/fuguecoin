@@ -263,6 +263,10 @@ static const CRPCCommand vRPCCommands[] =
     { "gettxout",               &gettxout,               true,      false },
     { "lockunspent",            &lockunspent,            false,     false },
     { "listlockunspent",        &listlockunspent,        false,     false },
+    { "dumpbootstrap",          &dumpbootstrap,          false,     false },
+    { "linearizehashes",        &linearizehashes,        false,     false },
+    { "dumpallprivkeys",        &dumpallprivkeys,        false,     false },
+
 };
 
 CRPCTable::CRPCTable()
@@ -1189,6 +1193,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "lockunspent"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "lockunspent"            && n > 1) ConvertTo<Array>(params[1]);
     if (strMethod == "importprivkey"          && n > 2) ConvertTo<bool>(params[2]);
+    if (strMethod == "dumpbootstrap"          && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "dumpbootstrap"          && n > 2) ConvertTo<boost::int64_t>(params[2]);
 
     return params;
 }

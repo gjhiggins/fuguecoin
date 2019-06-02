@@ -52,6 +52,10 @@ public slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to mining page */
+    void gotoMiningPage();
+    /** Switch to message page */
+    void gotoMessagePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -72,6 +76,10 @@ public slots:
      @see WalletModel::EncryptionStatus
      */
     void setEncryptionStatus();
+
+    /** Update the plot on the overview (home) page */
+    void updatePlot();
+
 };
 
 #endif // WALLETFRAME_H
