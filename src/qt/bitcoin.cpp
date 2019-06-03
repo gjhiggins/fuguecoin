@@ -176,6 +176,23 @@ int main(int argc, char *argv[])
     // Register meta types used for QMetaObject::invokeMethod
     qRegisterMetaType< bool* >();
 
+  // Basic Qt initialization (not dependent on parameters or configuration)
+#if QT_VERSION < 0x050000
+  // Internal string conversion is all UTF-8
+  QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
+  QTextCodec::setCodecForCStrings(QTextCodec::codecForTr());
+#endif
+
+#if QT_VERSION > 0x050100
+    // Generate high-dpi pixmaps
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+#if QT_VERSION >= 0x050600
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    // Address 4K screen resolution: http://doc.qt.io/qt-5/highdpi.html
+    // enable automatic scaling based on the pixel density of the monitor
+    qputenv( "QT_AUTO_SCREEN_SCALE_FACTOR", "1" );
+#endif
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
     QApplication::setOrganizationName("FugueCoin");
