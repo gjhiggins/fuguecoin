@@ -298,6 +298,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/rpcconsole.h \
     src/version.h \
     src/netbase.h \
+    src/script_error.h \
     src/clientversion.h \
     src/txdb.h \
     src/leveldb.h \
@@ -387,6 +388,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/qcustomplot.cpp \
     src/qt/blockexplorer.cpp \
     src/qt/miningpage.cpp \
+    src/script_error.cpp \
     src/fugue.c \
     src/ecies/ecies.c \
     src/ecies/kdf.c \
@@ -629,7 +631,7 @@ macx:QMAKE_INFO_PLIST = share/qt/Info.plist
 # Set libraries and includes at end, to use platform-defined defaults if not overridden
 INCLUDEPATH += $$BOOST_INCLUDE_PATH $$BDB_INCLUDE_PATH $$OPENSSL_INCLUDE_PATH $$QRENCODE_INCLUDE_PATH
 LIBS += $$join(BOOST_LIB_PATH,,-L,) $$join(BDB_LIB_PATH,,-L,) $$join(OPENSSL_LIB_PATH,,-L,) $$join(QRENCODE_LIB_PATH,,-L,)
-LIBS += -lssl -lcrypto -ldb_cxx$$BDB_LIB_SUFFIX -ldl
+LIBS += -lssl -lcrypto -ldb_cxx$$BDB_LIB_SUFFIX
 # -lgdi32 has to happen after -lcrypto (see  #681)
 win32:LIBS += -lws2_32 -lshlwapi -lmswsock -lole32 -loleaut32 -luuid -lgdi32
 LIBS += -lboost_system$$BOOST_LIB_SUFFIX -lboost_filesystem$$BOOST_LIB_SUFFIX -lboost_program_options$$BOOST_LIB_SUFFIX -lboost_thread$$BOOST_THREAD_LIB_SUFFIX
@@ -639,7 +641,7 @@ macx:LIBS += -lboost_chrono$$BOOST_LIB_SUFFIX
 contains(RELEASE, 1) {
     !win32:!macx {
         # Linux: turn dynamic linking back on for c/c++ runtime libraries
-        LIBS += -Wl,-Bdynamic
+        LIBS += -Wl,-Bdynamic -ldl
     }
 }
 macx:{
