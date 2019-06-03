@@ -1,45 +1,25 @@
 #include <map>
 #include <string>
-//#include <iostreamp>
-#include <fstream>
-#include <vector>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/foreach.hpp>
-#include <boost/preprocessor/stringize.hpp>
 #include <boost/test/unit_test.hpp>
-#include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_writer_template.h"
-#include "json/json_spirit_utils.h"
 
 #include "main.h"
 #include "wallet.h"
 #include "script.h"
 #include "script_error.h"
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/assign/list_of.hpp>
 
 using namespace std;
-using namespace boost;
 using namespace json_spirit;
-// using namespace boost::algorithm;
 
 struct F {
-    F() : i( 0 ) { 
-                    // BOOST_TEST_MESSAGE( "Tx fixture setup" );
-                }
-    ~F()         {
-                    // BOOST_TEST_MESSAGE( "Tx fixture teardown" );
-                }
-    void setup() {
-        static map<string, unsigned int> mapFlagNames = boost::assign::map_list_of
-            (string("NONE"),(unsigned int)SCRIPT_VERIFY_NONE)
-            (string("P2SH"),(unsigned int)SCRIPT_VERIFY_P2SH)
-            (string("STRICTENC"),(unsigned int)SCRIPT_VERIFY_STRICTENC)
-            (string("DISCOURAGE_UPGRADABLE_NOPS"),(unsigned int)SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
-            (string("CHECKLOCKTIMEVERIFY"),(unsigned int)SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY);
-    };
+    F() : i( 0 ) { BOOST_TEST_MESSAGE( "setup fixture" ); }
+    ~F()         { BOOST_TEST_MESSAGE( "teardown fixture" ); }
+
     int i;
 };
 

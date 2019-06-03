@@ -4,10 +4,15 @@ Bitcoin base58 encoding and decoding.
 Based on https://bitcointalk.org/index.php?topic=1026.0 (public domain)
 '''
 import hashlib
+import fugue_hash
+print(hashlib.algorithms_available)
 
 # for compatibility with following code...
 class SHA256:
     new = hashlib.sha256
+
+class FUGUE:
+    new = fugue_hash.getPoWHash
 
 if str != bytes:
     # Python 3.x
@@ -70,7 +75,7 @@ def b58decode(v, length = None):
 
 def checksum(v):
     """Return 32-bit checksum based on SHA256"""
-    return SHA256.new(SHA256.new(v).digest()).digest()[0:4]
+    return FUGUE.new(FUGUE.new(v).digest()).digest()[0:4]
 
 def b58encode_chk(v):
     """b58encode a string, with 32-bit checksum"""
@@ -96,7 +101,7 @@ def get_bcaddress_version(strAddress):
 
 if __name__ == '__main__':
     # Test case (from http://gitorious.org/bitcoin/python-base58.git)
-    assert get_bcaddress_version('15VjRaDX9zpbA8LVnbrCAFzrVzN7ixHNsC') is 0
+    assert get_bcaddress_version('FEyaPwV9xqRkCapaZSfJtrWhkhtyk9ohW1') is 0
     _ohai = 'o hai'.encode('ascii')
     _tmp = b58encode(_ohai)
     assert _tmp == 'DYB3oMS'

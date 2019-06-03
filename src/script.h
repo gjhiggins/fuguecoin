@@ -40,6 +40,8 @@ static const unsigned int MAX_OP_RETURN_RELAY = 100;      // bytes
 // Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 
+std::string ScriptToAsmStr(const CScript &script, const bool fAttemptSighashDecode = false);
+bool ParseScript(const std::string &source, CScript &result);
 /** Signature hash types/flags */
 enum
 {
@@ -56,6 +58,7 @@ enum
     SCRIPT_VERIFY_P2SH      = (1U << 0),
     SCRIPT_VERIFY_STRICTENC = (1U << 1),
     SCRIPT_VERIFY_NOCACHE   = (1U << 2),
+    SCRIPT_VERIFY_LOCKTIME  = (1U << 3),
 
     // Discourage use of NOPs reserved for upgrades (NOP1-10)
     //
@@ -222,11 +225,11 @@ enum opcodetype
     OP_CHECKSIGVERIFY = 0xad,
     OP_CHECKMULTISIG = 0xae,
     OP_CHECKMULTISIGVERIFY = 0xaf,
+    OP_CHECKLOCKTIMEVERIFY = 0xb1,
 
     // expansion
     OP_NOP1 = 0xb0,
-    OP_NOP2 = 0xb1,
-    OP_CHECKLOCKTIMEVERIFY = OP_NOP2,
+    OP_NOP2 = OP_CHECKLOCKTIMEVERIFY,
     OP_NOP3 = 0xb2,
     OP_NOP4 = 0xb3,
     OP_NOP5 = 0xb4,
@@ -585,6 +588,12 @@ public:
         return true;
     }
 
+    /* Returns whether the script is guaranteed to fail at execution,
+     * regardless of the initial stack. This allows outputs to be pruned
+     * instantly when entering the UTXO set. */
+    bool IsUnspendable() const {
+        return((size() > 0) && (*begin() == OP_RETURN));
+    }
 
     void SetDestination(const CTxDestination& address);
     void SetMultisig(int nRequired, const std::vector<CKey>& keys);
@@ -628,6 +637,8 @@ public:
         return CScriptID(Hash160(*this));
     }
 };
+
+CScript GetScriptForPubKeyHash(const CKeyID &keyID);
 
 /** Compact serializer for scripts.
  *
