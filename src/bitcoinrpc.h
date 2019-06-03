@@ -51,7 +51,7 @@ enum RPCErrorCode
     RPC_DESERIALIZATION_ERROR       = -22, // Error parsing or validating structure in raw format
 
     // P2P client errors
-    RPC_CLIENT_NOT_CONNECTED        = -9,  // Fuguecoin is not connected
+    RPC_CLIENT_NOT_CONNECTED        = -9,  // Bitcoin is not connected
     RPC_CLIENT_IN_INITIAL_DOWNLOAD  = -10, // Still downloading initial blocks
 
     // Wallet errors
@@ -100,8 +100,8 @@ public:
     bool threadSafe;
 };
 
-/*
-  Fuguecoin RPC command dispatcher.
+/**
+ * Bitcoin RPC command dispatcher.
  */
 class CRPCTable
 {
@@ -123,8 +123,12 @@ public:
 };
 
 extern const CRPCTable tableRPC;
-extern CReserveKey* pMiningKey;
 
+extern void InitRPCMining();
+extern void ShutdownRPCMining();
+
+extern void InitRPCMining();
+extern void ShutdownRPCMining();
 extern int64 nWalletUnlockTime;
 extern int64 AmountFromValue(const json_spirit::Value& value);
 extern json_spirit::Value ValueFromAmount(int64 amount);
@@ -139,6 +143,10 @@ extern json_spirit::Value addnode(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getaddednodeinfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value dumpprivkey(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value importprivkey(const json_spirit::Array& params, bool fHelp);
+
+extern json_spirit::Value dumpallprivkeys(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+extern json_spirit::Value dumpbootstrap(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+extern json_spirit::Value linearizehashes(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 
 extern json_spirit::Value getgenerate(const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
 extern json_spirit::Value setgenerate(const json_spirit::Array& params, bool fHelp);
@@ -194,6 +202,7 @@ extern json_spirit::Value sendrawtransaction(const json_spirit::Array& params, b
 extern json_spirit::Value getblockcount(const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp
 extern json_spirit::Value getdifficulty(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value settxfee(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value setmininput(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getrawmempool(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getblockhash(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getblock(const json_spirit::Array& params, bool fHelp);

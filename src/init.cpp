@@ -9,6 +9,7 @@
 #include "net.h"
 #include "init.h"
 #include "util.h"
+#include "main.h"
 #include "ui_interface.h"
 
 #include <boost/filesystem.hpp>
@@ -97,7 +98,9 @@ void Shutdown()
     RenameThread("bitcoin-shutoff");
     nTransactionsUpdated++;
     StopRPCThreads();
+	ShutdownRPCMining();
     bitdb.Flush(false);
+    GenerateBitcoins(false, NULL);
     StopNode();
     {
         LOCK(cs_main);
@@ -107,9 +110,12 @@ void Shutdown()
             pblocktree->Flush();
         if (pcoinsTip)
             pcoinsTip->Flush();
+        if (paddressmap)
+            paddressmap->Flush();
         delete pcoinsTip; pcoinsTip = NULL;
         delete pcoinsdbview; pcoinsdbview = NULL;
         delete pblocktree; pblocktree = NULL;
+        delete paddressmap; paddressmap = NULL;
     }
     bitdb.Flush(true);
     boost::filesystem::remove(GetPidFile());
@@ -293,7 +299,7 @@ std::string HelpMessage()
     string strUsage = _("Options:") + "\n" +
         "  -?                     " + _("This help message") + "\n" +
         "  -conf=<file>           " + _("Specify configuration file (default: fuguecoin.conf)") + "\n" +
-        "  -pid=<file>            " + _("Specify pid file (default: fuguecoind.pid)") + "\n" +
+        "  -pid=<file>            " + _("Specify pid file (default: bitcoind.pid)") + "\n" +
         "  -gen                   " + _("Generate coins (default: 0)") + "\n" +
         "  -datadir=<dir>         " + _("Specify data directory") + "\n" +
         "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n" +
@@ -318,6 +324,7 @@ std::string HelpMessage()
         "  -bantime=<n>           " + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)") + "\n" +
         "  -maxreceivebuffer=<n>  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 5000)") + "\n" +
         "  -maxsendbuffer=<n>     " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 1000)") + "\n" +
+        "  -bloomfilters          " + _("Allow peers to set bloom filters (default: 1)") + "\n" +
 #ifdef USE_UPNP
 #if USE_UPNP
         "  -upnp                  " + _("Use UPnP to map the listening port (default: 1 when listening)") + "\n" +
@@ -326,6 +333,7 @@ std::string HelpMessage()
 #endif
 #endif
         "  -paytxfee=<amt>        " + _("Fee per KB to add to transactions you send") + "\n" +
+        "  -mininput=<amt>        " + _("When creating transactions, ignore inputs with value less than this (default: 0.0001)") + "\n" +
 #ifdef QT_GUI
         "  -server                " + _("Accept command line and JSON-RPC commands") + "\n" +
 #endif
@@ -359,6 +367,7 @@ std::string HelpMessage()
         "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 288, 0 = all)") + "\n" +
         "  -checklevel=<n>        " + _("How thorough the block verification is (0-4, default: 3)") + "\n" +
         "  -txindex               " + _("Maintain a full transaction index (default: 0)") + "\n" +
+        "  -addrindex             " + _("Maintain address index (default: 0)") + "\n" +
         "  -loadblock=<file>      " + _("Imports blocks from external blk000??.dat file") + "\n" +
         "  -reindex               " + _("Rebuild block chain index from current blk000??.dat files") + "\n" +
         "  -par=<n>               " + _("Set the number of script verification threads (up to 16, 0 = auto, <0 = leave that many cores free, default: 0)") + "\n" +
@@ -408,6 +417,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             nFile++;
         }
         pblocktree->WriteReindexing(false);
+        paddressmap->WriteReindexing(false);
         fReindex = false;
         printf("Reindexing finished\n");
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
@@ -496,6 +506,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     // ********************************************************* Step 2: parameter interactions
 
     fTestNet = GetBoolArg("-testnet");
+    fBloomFilters = GetBoolArg("-bloomfilters", true);
+    if (fBloomFilters)
+        nLocalServices |= NODE_BLOOM;
 
     if (mapArgs.count("-bind")) {
         // when specifying an explicit binding address, you want to listen on it
@@ -617,11 +630,17 @@ bool AppInit2(boost::thread_group& threadGroup)
             InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
     }
 
+    if (mapArgs.count("-mininput"))
+    {
+        if (!ParseMoney(mapArgs["-mininput"], nMinimumInputValue))
+            return InitError(strprintf(_("Invalid amount for -mininput=<amount>: '%s'"), mapArgs["-mininput"].c_str()));
+    }
+
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
     std::string strDataDir = GetDataDir().string();
 
-    // Make sure only a single Fuguecoin process is using the data directory.
+    // Make sure only a single Bitcoin process is using the data directory.
     boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
@@ -660,7 +679,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     {
         // try moving the database env out of the way
         boost::filesystem::path pathDatabase = GetDataDir() / "database";
-        boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%"PRI64d".bak", GetTime());
+        boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%" PRI64d".bak", GetTime());
         try {
             boost::filesystem::rename(pathDatabase, pathDatabaseBak);
             printf("Moved old %s to %s. Retrying.\n", pathDatabase.string().c_str(), pathDatabaseBak.string().c_str());
@@ -853,13 +872,18 @@ bool AppInit2(boost::thread_group& threadGroup)
                 delete pcoinsTip;
                 delete pcoinsdbview;
                 delete pblocktree;
+                delete paddressmap;
 
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
                 pcoinsTip = new CCoinsViewCache(*pcoinsdbview);
+                paddressmap = new CAddressDB(nBlockTreeDBCache, false, fReindex);
 
                 if (fReindex)
+                {
                     pblocktree->WriteReindexing(true);
+                    paddressmap->WriteReindexing(true);
+                }
 
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
@@ -869,6 +893,12 @@ bool AppInit2(boost::thread_group& threadGroup)
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex()) {
                     strLoadError = _("Error initializing block database");
+                    break;
+                }
+
+                // Check for changed -addrindex state
+                if (fAddrIndex != GetBoolArg("-addrindex", false)) {
+                    strLoadError = _("You need to rebuild the database using -reindex to change -addrindex");
                     break;
                 }
 
@@ -914,7 +944,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         printf("Shutdown requested. Exiting.\n");
         return false;
     }
-    printf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    printf(" block index %15" PRI64d"ms\n", GetTimeMillis() - nStart);
 
     if (GetBoolArg("-printblockindex") || GetBoolArg("-printblocktree"))
     {
@@ -1007,7 +1037,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
 
     printf("%s", strErrors.str().c_str());
-    printf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    printf(" wallet      %15" PRI64d"ms\n", GetTimeMillis() - nStart);
 
     RegisterWallet(pwalletMain);
 
@@ -1029,7 +1059,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
         nStart = GetTimeMillis();
         pwalletMain->ScanForWalletTransactions(pindexRescan, true);
-        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+        printf(" rescan      %15" PRI64d"ms\n", GetTimeMillis() - nStart);
         pwalletMain->SetBestChain(CBlockLocator(pindexBest));
         nWalletDBUpdated++;
     }
@@ -1061,7 +1091,7 @@ bool AppInit2(boost::thread_group& threadGroup)
             printf("Invalid or missing peers.dat; recreating\n");
     }
 
-    printf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
+    printf("Loaded %i addresses from peers.dat  %" PRI64d"ms\n",
            addrman.size(), GetTimeMillis() - nStart);
 
     // ********************************************************* Step 11: start node
@@ -1075,14 +1105,16 @@ bool AppInit2(boost::thread_group& threadGroup)
     RandAddSeedPerfmon();
 
     //// debug print
-    printf("mapBlockIndex.size() = %"PRIszu"\n",   mapBlockIndex.size());
+    printf("mapBlockIndex.size() = %" PRIszu"\n",   mapBlockIndex.size());
     printf("nBestHeight = %d\n",                   nBestHeight);
-    printf("setKeyPool.size() = %"PRIszu"\n",      pwalletMain->setKeyPool.size());
-    printf("mapWallet.size() = %"PRIszu"\n",       pwalletMain->mapWallet.size());
-    printf("mapAddressBook.size() = %"PRIszu"\n",  pwalletMain->mapAddressBook.size());
+    printf("setKeyPool.size() = %" PRIszu"\n",      pwalletMain->setKeyPool.size());
+    printf("mapWallet.size() = %" PRIszu"\n",       pwalletMain->mapWallet.size());
+    printf("mapAddressBook.size() = %" PRIszu"\n",  pwalletMain->mapAddressBook.size());
 
     StartNode(threadGroup);
 
+	InitRPCMining();
+	
     if (fServer)
         StartRPCThreads();
 

@@ -2,7 +2,7 @@
  * Qt4 bitcoin GUI.
  *
  * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2013
+ * The Bitcoin Developers 2011-2014
  */
 #ifndef WALLETFRAME_H
 #define WALLETFRAME_H
@@ -13,12 +13,14 @@ class BitcoinGUI;
 class ClientModel;
 class WalletModel;
 class WalletStack;
+class WalletView;
 
 class WalletFrame : public QFrame
 {
     Q_OBJECT
+
 public:
-    explicit WalletFrame(BitcoinGUI *_gui);
+    explicit WalletFrame(BitcoinGUI *_gui = 0);
     ~WalletFrame();
 
     void setClientModel(ClientModel *clientModel);
@@ -37,6 +39,8 @@ private:
     ClientModel *clientModel;
     WalletStack *walletStack;
 
+    WalletView *currentWalletView();
+
 public slots:
     /** Switch to overview (home) page */
     void gotoOverviewPage();
@@ -48,6 +52,10 @@ public slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to mining page */
+    void gotoMiningPage();
+    /** Switch to message page */
+    void gotoMessagePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -68,6 +76,10 @@ public slots:
      @see WalletModel::EncryptionStatus
      */
     void setEncryptionStatus();
+
+    /** Update the plot on the overview (home) page */
+    void updatePlot();
+
 };
 
 #endif // WALLETFRAME_H

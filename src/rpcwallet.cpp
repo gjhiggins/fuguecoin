@@ -10,6 +10,7 @@
 #include "bitcoinrpc.h"
 #include "init.h"
 #include "base58.h"
+#include "main.h"
 
 using namespace std;
 using namespace boost;
@@ -83,6 +84,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("keypoololdest", (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
     obj.push_back(Pair("keypoolsize",   pwalletMain->GetKeyPoolSize()));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
+    obj.push_back(Pair("mininput",      ValueFromAmount(nMinimumInputValue)));
     if (pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime / 1000));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
@@ -247,6 +249,24 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
     return ret;
 }
 
+
+Value setmininput(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        throw runtime_error(
+            "setmininput <amount>\n"
+            "<amount> is a real and is rounded to the nearest 0.00000001");
+
+    // Amount
+    int64 nAmount = 0;
+    if (params[0].get_real() != 0.0)
+        nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
+
+    nMinimumInputValue = nAmount;
+    return true;
+}
+
+
 Value sendtoaddress(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 4)
@@ -332,14 +352,14 @@ Value signmessage(const Array& params, bool fHelp)
 
     CKey key;
     if (!pwalletMain->GetKey(keyID, key))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
+        throw JSONRPCError(RPC_WALLET_ERROR, " PRIvate key not available");
 
-    CHashWriter ss(SER_GETHASH, 0);
+    CDataStream ss(SER_GETHASH, 0);
     ss << strMessageMagic;
     ss << strMessage;
 
-    vector<unsigned char> vchSig;
-    if (!key.SignCompact(ss.GetHash(), vchSig))
+    std::vector<unsigned char> vchSig;
+    if (!key.SignCompact(Hashfugue(ss.begin(), ss.end()), vchSig))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
 
     return EncodeBase64(&vchSig[0], vchSig.size());
@@ -370,12 +390,12 @@ Value verifymessage(const Array& params, bool fHelp)
     if (fInvalid)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Malformed base64 encoding");
 
-    CHashWriter ss(SER_GETHASH, 0);
+    CDataStream ss(SER_GETHASH, 0);
     ss << strMessageMagic;
     ss << strMessage;
 
     CKey key;
-    if (!key.SetCompactSignature(ss.GetHash(), vchSig))
+    if (!key.SetCompactSignature(Hashfugue(ss.begin(), ss.end()), vchSig))
         return false;
 
     return (key.GetPubKey().GetID() == keyID);
@@ -718,7 +738,7 @@ static CScript _createmultisig(const Array& params)
     if ((int)keys.size() < nRequired)
         throw runtime_error(
             strprintf("not enough keys supplied "
-                      "(got %"PRIszu" keys, but need at least %d to redeem)", keys.size(), nRequired));
+                      "(got %" PRIszu" keys, but need at least %d to redeem)", keys.size(), nRequired));
     std::vector<CKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)

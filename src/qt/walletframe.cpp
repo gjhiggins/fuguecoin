@@ -2,16 +2,16 @@
  * Qt4 bitcoin GUI.
  *
  * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2013
+ * The Bitcoin Developers 2011-2014
  */
 #include "walletframe.h"
 #include "bitcoingui.h"
 #include "walletstack.h"
+#include "walletview.h"
 
-#include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QMessageBox>
-
-#include <stdio.h>
+#include <QLabel>
 
 WalletFrame::WalletFrame(BitcoinGUI *_gui) :
     QFrame(_gui),
@@ -25,6 +25,10 @@ WalletFrame::WalletFrame(BitcoinGUI *_gui) :
     walletStack->setBitcoinGUI(gui);
     walletFrameLayout->setContentsMargins(0,0,0,0);
     walletFrameLayout->addWidget(walletStack);
+
+    QLabel *noWallet = new QLabel(tr("No wallet has been loaded."));
+    noWallet->setAlignment(Qt::AlignCenter);
+    walletStack->addWidget(noWallet);
 }
 
 WalletFrame::~WalletFrame()
@@ -35,6 +39,7 @@ void WalletFrame::setClientModel(ClientModel *clientModel)
 {
     this->clientModel = clientModel;
     walletStack->setClientModel(clientModel);
+    walletStack->updatePlot();
 }
 
 bool WalletFrame::addWallet(const QString& name, WalletModel *walletModel)
@@ -56,6 +61,10 @@ void WalletFrame::removeAllWallets()
 
 bool WalletFrame::handleURI(const QString &uri)
 {
+    WalletView *walletView = currentWalletView();
+    if (!walletView)
+        return false;
+
     return walletStack->handleURI(uri);
 }
 
@@ -82,7 +91,9 @@ void WalletFrame::gotoHistoryPage()
 
 void WalletFrame::gotoAddressBookPage()
 {
-    walletStack->gotoAddressBookPage();
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletStack->gotoAddressBookPage();
 }
 
 void WalletFrame::gotoReceiveCoinsPage()
@@ -95,37 +106,72 @@ void WalletFrame::gotoSendCoinsPage(QString addr)
     walletStack->gotoSendCoinsPage(addr);
 }
 
+void WalletFrame::gotoMiningPage()
+{
+    walletStack->gotoMiningPage();
+}
+
+void WalletFrame::gotoMessagePage()
+{
+    walletStack->gotoMessagePage();
+}
+
 void WalletFrame::gotoSignMessageTab(QString addr)
 {
-    walletStack->gotoSignMessageTab(addr);
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->gotoSignMessageTab(addr);
 }
 
 void WalletFrame::gotoVerifyMessageTab(QString addr)
 {
-    walletStack->gotoSignMessageTab(addr);
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->gotoVerifyMessageTab(addr);
 }
 
 void WalletFrame::encryptWallet(bool status)
 {
-    walletStack->encryptWallet(status);
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->encryptWallet(status);
 }
 
 void WalletFrame::backupWallet()
 {
-    walletStack->backupWallet();
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->backupWallet();
 }
 
 void WalletFrame::changePassphrase()
 {
-    walletStack->changePassphrase();
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->changePassphrase();
 }
 
 void WalletFrame::unlockWallet()
 {
-    walletStack->unlockWallet();
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->unlockWallet();
 }
 
 void WalletFrame::setEncryptionStatus()
 {
-    walletStack->setEncryptionStatus();
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletStack->setEncryptionStatus();
 }
+
+WalletView *WalletFrame::currentWalletView()
+{
+    return qobject_cast<WalletView*>(walletStack->currentWidget());
+}
+
+void WalletFrame::updatePlot()
+{
+    walletStack->updatePlot();
+}
+

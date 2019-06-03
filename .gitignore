@@ -1,7 +1,11 @@
+# git
+.gitignore
+# app
 src/*.exe
-src/bitcoin
-src/bitcoind
-src/test_bitcoin
+src/fuguecoin
+src/fuguecoind
+src/test_fuguecoin
+src/obj
 .*.swp
 *.*~*
 *.bak
@@ -9,23 +13,28 @@ src/test_bitcoin
 *.orig
 *.o
 *.patch
-.bitcoin
+.fuguecoin
+*.ts
+*.d.ts
+.ts
 
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
-bitcoin-qt
-Bitcoin-Qt.app
+fuguecoin-qt
+Fuguecoin-Qt.app
+datadir
 
 # Unit-tests
 Makefile.test
-bitcoin-qt_test
+fuguecoin-qt_test
 
 # Resources cpp
 qrc_*.cpp
 
 # Qt creator
 *.pro.user
+.qmake.stash
 
 # Mac specific
 .DS_Store

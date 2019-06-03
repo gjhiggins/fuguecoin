@@ -263,6 +263,10 @@ static const CRPCCommand vRPCCommands[] =
     { "gettxout",               &gettxout,               true,      false },
     { "lockunspent",            &lockunspent,            false,     false },
     { "listlockunspent",        &listlockunspent,        false,     false },
+    { "dumpbootstrap",          &dumpbootstrap,          false,     false },
+    { "linearizehashes",        &linearizehashes,        false,     false },
+    { "dumpallprivkeys",        &dumpallprivkeys,        false,     false },
+
 };
 
 CRPCTable::CRPCTable()
@@ -352,7 +356,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
             "HTTP/1.1 %d %s\r\n"
             "Date: %s\r\n"
             "Connection: %s\r\n"
-            "Content-Length: %"PRIszu"\r\n"
+            "Content-Length: %" PRIszu"\r\n"
             "Content-Type: application/json\r\n"
             "Server: fuguecoin-json-rpc/%s\r\n"
             "\r\n"
@@ -419,7 +423,7 @@ int ReadHTTPStatus(std::basic_istream<char>& stream, int &proto)
 int ReadHTTPHeaders(std::basic_istream<char>& stream, map<string, string>& mapHeadersRet)
 {
     int nLen = 0;
-    loop
+    while (true)
     {
         string str;
         std::getline(stream, str);
@@ -1151,6 +1155,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getnetworkhashps"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
     if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
+    if (strMethod == "setmininput"            && n > 0) ConvertTo<double>(params[0]);
     if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getreceivedbyaccount"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "listreceivedbyaddress"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
@@ -1188,6 +1193,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "lockunspent"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "lockunspent"            && n > 1) ConvertTo<Array>(params[1]);
     if (strMethod == "importprivkey"          && n > 2) ConvertTo<bool>(params[2]);
+    if (strMethod == "dumpbootstrap"          && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "dumpbootstrap"          && n > 2) ConvertTo<boost::int64_t>(params[2]);
 
     return params;
 }

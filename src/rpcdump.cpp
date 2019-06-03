@@ -94,6 +94,144 @@ Value dumpprivkey(const Array& params, bool fHelp)
     CSecret vchSecret;
     bool fCompressed;
     if (!pwalletMain->GetSecret(keyID, vchSecret, fCompressed))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
+        throw JSONRPCError(RPC_WALLET_ERROR, " PRIvate key for address " + strAddress + " is not known");
     return CBitcoinSecret(vchSecret, fCompressed).ToString();
 }
+
+Value dumpallprivkeys(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "dumpallprivkeys\n"
+            "Reveals all private keys.");
+
+    if (pwalletMain->IsLocked())
+        throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+    Array ret;
+    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, string)& item, pwalletMain->mapAddressBook)
+    {
+        const CBitcoinAddress& address = item.first;
+        const string& strName = item.second;
+
+        CKeyID keyID;
+        if (!address.GetKeyID(keyID))
+           continue;
+        CKey vchSecret;
+        if (!pwalletMain->GetKey(keyID, vchSecret))
+           continue;
+        bool fCompressed = vchSecret.IsCompressed();
+        CSecret vch_secret = vchSecret.GetSecret(fCompressed);
+        ret.push_back(strprintf(
+                          "address: %s (%s) key: %s",
+                          address.ToString().c_str(),
+                          strName.c_str(),
+                          CBitcoinSecret(vch_secret, fCompressed).ToString().c_str()));
+    }
+
+    return ret;
+
+}
+
+Value dumpbootstrap(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2 || params.size() > 3)
+        throw runtime_error(
+            "dumpbootstrap <destination> <endblock> [startblock=0]\n"
+            "Creates a bootstrap format block dump of the blockchain in destination, which can be a directory or a path with filename, up to the given endblock number.\n"
+            "Optional <startblock> is the first block number to dump.");
+
+    string strDest = params[0].get_str();
+    // int nEndBlock = params[1].get_int();
+    // if (nEndBlock < 0 || nEndBlock > nBestHeight)
+    //     throw runtime_error("End block number out of range.");
+    int nEndBlock = 2725960; // 3rd Feb 2019
+    if (params.size() > 1)
+        nEndBlock = params[1].get_int();
+    if (nEndBlock < 0 || nEndBlock > nBestHeight)
+        throw runtime_error("End block number out of range.");
+    int nStartBlock = 0;
+    if (params.size() > 2)
+        nStartBlock = params[2].get_int();
+    if (nStartBlock < 0 || nStartBlock > nEndBlock)
+        throw runtime_error("Start block number out of range.");
+
+    unsigned char pchMessageStart[4] = { 0xf9, 0xbe, 0xb4, 0xd4 };
+
+    boost::filesystem::path pathDest(strDest);
+    if (boost::filesystem::is_directory(pathDest))
+        pathDest /= "bootstrap.dat";
+
+    try {
+        FILE* file = fopen(pathDest.string().c_str(), "wb");
+        if (!file)
+            throw JSONRPCError(RPC_MISC_ERROR, "Error: Could not open bootstrap file for writing.");
+
+        CAutoFile fileout = CAutoFile(file, SER_DISK, CLIENT_VERSION);
+        if (!fileout)
+            throw JSONRPCError(RPC_MISC_ERROR, "Error: Could not open bootstrap file for writing.");
+
+        for (int nHeight = nStartBlock; nHeight <= nEndBlock; nHeight++)
+        {
+            CBlock block;
+            CBlockIndex* pblockindex = FindBlockByHeight(nHeight);
+            block.ReadFromDisk(pblockindex);
+            fileout << FLATDATA(pchMessageStart) << fileout.GetSerializeSize(block) << block;
+        }
+    } catch(const boost::filesystem::filesystem_error &e) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Error: Bootstrap dump failed!");
+    }
+
+    // return NullUniValue;
+    return "bootstrap file created";
+}
+
+Value linearizehashes(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 3)
+        throw runtime_error(
+            "linearizehashes <destination> <endblock>  [startblock=0]\n"
+            "Creates a dump of linearized block hashes in destination, which can be a directory or a path with filename, up to the given endblock number.\n"
+            "Optional <startblock> is the first block number to dump.");
+
+    string strDest = params[0].get_str();
+
+    int nEndBlock = 1646900; // 3rd Feb 2019
+    if (params.size() > 1)
+        nEndBlock = params[1].get_int();
+    if (nEndBlock < 0 || nEndBlock > nBestHeight)
+        throw runtime_error("End block number out of range.");
+
+    int nStartBlock = 0;
+    if (params.size() > 2)
+        nStartBlock = params[2].get_int();
+    if (nStartBlock < 0 || nStartBlock > nEndBlock)
+        throw runtime_error("Start block number out of range.");
+
+    boost::filesystem::path pathDest(strDest);
+    if (boost::filesystem::is_directory(pathDest))
+        pathDest /= "hashlist.txt";
+
+    try {
+        FILE* file = fopen(pathDest.string().c_str(), "w");
+        if (!file)
+            throw JSONRPCError(-1, "Error: Could not open output file for writing.");
+
+        CAutoFile fileout = CAutoFile(file, SER_DISK, CLIENT_VERSION);
+        if (!fileout)
+            throw JSONRPCError(-1, "Error: Could not open output file for writing.");
+
+        for (int nHeight = nStartBlock; nHeight <= nEndBlock; nHeight++)
+        {
+            CBlock block;
+            CBlockIndex* pblockindex = FindBlockByHeight(nHeight);
+            block.ReadFromDisk(pblockindex);
+            std::string blockhash = block.GetHash().ToString().c_str();
+            fileout << blockhash.append("\n");
+        }
+    } catch(const boost::filesystem::filesystem_error &e) {
+        throw JSONRPCError(-1, "Error: Linearized hash dump failed!");
+    }
+
+    return "file of linearized hashes created";
+}
+

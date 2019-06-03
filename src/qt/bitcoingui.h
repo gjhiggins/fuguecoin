@@ -15,9 +15,13 @@ class TransactionView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
+class MessagePage;
 class SignVerifyMessageDialog;
+class EncryptDecryptMessageDialog;
 class Notificator;
 class RPCConsole;
+class BlockExplorer;
+class MiningPage;
 
 class CWallet;
 
@@ -33,7 +37,7 @@ class QAction;
 QT_END_NAMESPACE
 
 /**
-  Bitcoin GUI main class. This class represents the main window of the Bitcoin UI. It communicates with both the client and
+  Fuguecoin GUI main class. This class represents the main window of the Fuguecoin UI. It communicates with both the client and
   wallet models to give the user an up-to-date view of the current core state.
 */
 class BitcoinGUI : public QMainWindow
@@ -43,7 +47,7 @@ class BitcoinGUI : public QMainWindow
 public:
     static const QString DEFAULT_WALLET;
 
-    explicit BitcoinGUI(QWidget *parent = 0);
+    explicit BitcoinGUI(bool fIsTestnet = false, QWidget *parent = 0);
     ~BitcoinGUI();
 
     /** Set the client model.
@@ -51,7 +55,7 @@ public:
     */
     void setClientModel(ClientModel *clientModel);
     /** Set the wallet model.
-        The wallet model represents a bitcoin wallet, and offers access to the list of transactions, address book and sending
+        The wallet model represents a fuguecoin wallet, and offers access to the list of transactions, address book and sending
         functionality.
     */
 
@@ -67,6 +71,8 @@ public:
     QAction * getAddressBookAction() { return addressBookAction; }
     QAction * getReceiveCoinsAction() { return receiveCoinsAction; }
     QAction * getSendCoinsAction() { return sendCoinsAction; }
+    QAction * getMiningAction() { return miningAction; }
+    QAction * getMessageAction() { return messageAction; }
 
 protected:
     void changeEvent(QEvent *e);
@@ -78,12 +84,14 @@ protected:
 private:
     ClientModel *clientModel;
     WalletFrame *walletFrame;
+    // MiningPage *miningPage;
 
     QLabel *labelEncryptionIcon;
     QLabel *labelConnectionsIcon;
     QLabel *labelBlocksIcon;
     QLabel *progressBarLabel;
     QProgressBar *progressBar;
+    QLabel *labelMiningIcon;
 
     QMenuBar *appMenuBar;
     QAction *overviewAction;
@@ -102,36 +110,44 @@ private:
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
+    QAction *openBlockExplorerAction;
+    QAction *miningAction;
+    QAction *messageAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
     TransactionView *transactionView;
     RPCConsole *rpcConsole;
+    BlockExplorer* blockExplorer;
 
     QMovie *syncIconMovie;
     /** Keep track of previous number of blocks, to detect progress */
     int prevBlocks;
 
     /** Create the main UI actions. */
-    void createActions();
+    void createActions(bool fIsTestnet);
     /** Create the menu bar and sub-menus. */
     void createMenuBar();
     /** Create the toolbars */
     void createToolBars();
     /** Create system tray icon and notification */
-    void createTrayIcon();
+    void createTrayIcon(bool fIsTestnet);
     /** Create system tray menu (or setup the dock menu) */
     void createTrayIconMenu();
     /** Save window size and position */
     void saveWindowGeometry();
     /** Restore window size and position */
     void restoreWindowGeometry();
+    /** Enable or disable all wallet-related actions */
+    void setWalletActionsEnabled(bool enabled);
 
 public slots:
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
     /** Set number of blocks shown in the UI */
     void setNumBlocks(int count, int nTotalBlocks);
+    /** Set mining status and hashrate in the UI */
+    void setMining(bool mining, int hashrate);
     /** Set the encryption status as shown in the UI.
        @param[in] status            current encryption status
        @see WalletModel::EncryptionStatus
@@ -171,6 +187,11 @@ private slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to mining page */
+    void gotoMiningPage();
+
+    /** switch to message page*/
+    void gotoMessagePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

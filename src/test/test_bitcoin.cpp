@@ -20,22 +20,32 @@ struct TestingSetup {
     boost::thread_group threadGroup;
 
     TestingSetup() {
+        BOOST_TEST_MESSAGE("1");
         fPrintToDebugger = true; // don't want to write to debug.log file
+        BOOST_TEST_MESSAGE("2");
         noui_connect();
+        BOOST_TEST_MESSAGE("3");
         bitdb.MakeMock();
+        BOOST_TEST_MESSAGE("4");
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
         boost::filesystem::create_directories(pathTemp);
+        BOOST_TEST_MESSAGE("5");
         mapArgs["-datadir"] = pathTemp.string();
         pblocktree = new CBlockTreeDB(1 << 20, true);
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
         pcoinsTip = new CCoinsViewCache(*pcoinsdbview);
-        InitBlockIndex();
+        // BOOST_TEST_MESSAGE("6");
+        // InitBlockIndex();
+        BOOST_TEST_MESSAGE("7");
         bool fFirstRun;
         pwalletMain = new CWallet("wallet.dat");
+        BOOST_TEST_MESSAGE("8");
         pwalletMain->LoadWallet(fFirstRun);
         RegisterWallet(pwalletMain);
+        BOOST_TEST_MESSAGE("19");
         nScriptCheckThreads = 3;
         for (int i=0; i < nScriptCheckThreads-1; i++)
+            BOOST_TEST_MESSAGE("t1");
             threadGroup.create_thread(&ThreadScriptCheck);
     }
     ~TestingSetup()

@@ -11,6 +11,7 @@
 #include "script.h"
 
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 class CWallet;
 class CBlock;
@@ -50,11 +51,14 @@ static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
 /** No amount larger than this (in satoshi) is valid */
 static const int64 MAX_MONEY = 84000000 * COIN;
+/** Dust Soft Limit, allowed with additional fee per output */
+static const int64 DUST_SOFT_LIMIT = 100000; // 0.001 B
+/** Dust Hard Limit, ignored as wallet inputs (mininput default) */
+static const int64 DUST_HARD_LIMIT = 1000;   // 0.00001 B mininput
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 120;
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
-static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 /** Maximum number of script-checking threads allowed */
 static const int MAX_SCRIPTCHECK_THREADS = 16;
 #ifdef USE_UPNP
@@ -96,10 +100,12 @@ extern bool fReindex;
 extern bool fBenchmark;
 extern int nScriptCheckThreads;
 extern bool fTxIndex;
+extern bool fAddrIndex;
 extern unsigned int nCoinCacheSize;
 
 // Settings
 extern int64 nTransactionFee;
+extern int64 nMinimumInputValue;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64 nMinDiskSpace = 52428800;
@@ -108,6 +114,7 @@ static const uint64 nMinDiskSpace = 52428800;
 class CReserveKey;
 class CCoinsDB;
 class CBlockTreeDB;
+class CAddressDB;
 struct CDiskBlockPos;
 class CCoins;
 class CTxUndo;
@@ -184,6 +191,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash);
 bool VerifySignature(const CCoins& txFrom, const CTransaction& txTo, unsigned int nIn, unsigned int flags, int nHashType);
 /** Abort with a message */
 bool AbortNode(const std::string &msg);
+/** Get block reward */
+int64 GetBlockValue(int nHeight, int64 nFees);
 
 
 
@@ -319,19 +328,23 @@ public:
     CScript scriptSig;
     unsigned int nSequence;
 
+    /* Setting nSequence to this value for every input in a transaction
+     * disables nLockTime. */
+    static const uint32_t SEQUENCE_FINAL = 0xffffffff;
+
     CTxIn()
     {
-        nSequence = std::numeric_limits<unsigned int>::max();
+        nSequence = SEQUENCE_FINAL;
     }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
+    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=SEQUENCE_FINAL)
     {
         prevout = prevoutIn;
         scriptSig = scriptSigIn;
         nSequence = nSequenceIn;
     }
 
-    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
+    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=SEQUENCE_FINAL)
     {
         prevout = COutPoint(hashPrevTx, nOut);
         scriptSig = scriptSigIn;
@@ -347,7 +360,7 @@ public:
 
     bool IsFinal() const
     {
-        return (nSequence == std::numeric_limits<unsigned int>::max());
+        return (nSequence == SEQUENCE_FINAL);
     }
 
     friend bool operator==(const CTxIn& a, const CTxIn& b)
@@ -371,7 +384,7 @@ public:
             str += strprintf(", coinbase %s", HexStr(scriptSig).c_str());
         else
             str += strprintf(", scriptSig=%s", scriptSig.ToString().substr(0,24).c_str());
-        if (nSequence != std::numeric_limits<unsigned int>::max())
+        if (nSequence != SEQUENCE_FINAL)
             str += strprintf(", nSequence=%u", nSequence);
         str += ")";
         return str;
@@ -445,7 +458,7 @@ public:
     {
         if (scriptPubKey.size() < 6)
             return "CTxOut(error)";
-        return strprintf("CTxOut(nValue=%"PRI64d".%08"PRI64d", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
+        return strprintf("CTxOut(nValue=%" PRI64d".%08" PRI64d", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
     }
 
     void print() const
@@ -535,7 +548,7 @@ public:
                 return false;
 
         bool fNewer = false;
-        unsigned int nLowest = std::numeric_limits<unsigned int>::max();
+        unsigned int nLowest = CTxIn::SEQUENCE_FINAL;
         for (unsigned int i = 0; i < vin.size(); i++)
         {
             if (vin[i].nSequence != old.vin[i].nSequence)
@@ -638,7 +651,7 @@ public:
     std::string ToString() const
     {
         std::string str;
-        str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%"PRIszu", vout.size=%"PRIszu", nLockTime=%u)\n",
+        str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%" PRIszu", vout.size=%" PRIszu", nLockTime=%u)\n",
             GetHash().ToString().c_str(),
             nVersion,
             vin.size(),
@@ -1475,7 +1488,7 @@ public:
 
     void print() const
     {
-        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu")\n",
+        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
             GetHash().ToString().c_str(),
             nVersion,
             hashPrevBlock.ToString().c_str(),
@@ -2221,6 +2234,9 @@ extern CCoinsViewCache *pcoinsTip;
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
 
+/** Global variable that points to the address database (protected by cs_main) */
+extern CAddressDB *paddressmap;
+
 struct CBlockTemplate
 {
     CBlock block;
@@ -2228,6 +2244,9 @@ struct CBlockTemplate
     std::vector<int64_t> vTxSigOps;
 };
 
+#if defined(_M_IX86) || defined(__i386__) || defined(__i386) || defined(_M_X64) || defined(__x86_64__) || defined(_M_AMD64)
+extern unsigned int cpuid_edx;
+#endif
 
 
 

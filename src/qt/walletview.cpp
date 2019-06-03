@@ -16,12 +16,18 @@
 #include "transactionview.h"
 #include "overviewpage.h"
 #include "askpassphrasedialog.h"
+#include "miningpage.h"
+#include "messagepage.h"
 #include "ui_interface.h"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QAction>
+#if QT_VERSION < 0x050000
 #include <QDesktopServices>
+#else
+#include <QStandardPaths>
+#endif
 #include <QFileDialog>
 #include <QPushButton>
 
@@ -55,6 +61,10 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
 
     sendCoinsPage = new SendCoinsDialog(gui);
 
+    miningPage = new MiningPage(gui);
+
+    messagePage = new MessagePage(gui);
+
     signVerifyMessageDialog = new SignVerifyMessageDialog(gui);
 
     addWidget(overviewPage);
@@ -62,6 +72,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     addWidget(addressBookPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(miningPage);
+    addWidget(messagePage);
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), this, SLOT(gotoHistoryPage()));
@@ -99,6 +111,7 @@ void WalletView::setClientModel(ClientModel *clientModel)
         overviewPage->setClientModel(clientModel);
         addressBookPage->setOptionsModel(clientModel->getOptionsModel());
         receiveCoinsPage->setOptionsModel(clientModel->getOptionsModel());
+        messagePage->setClientModel(clientModel);
     }
 }
 
@@ -117,6 +130,8 @@ void WalletView::setWalletModel(WalletModel *walletModel)
         receiveCoinsPage->setModel(walletModel->getAddressTableModel());
         sendCoinsPage->setModel(walletModel);
         signVerifyMessageDialog->setModel(walletModel);
+        miningPage->setModel(walletModel);
+        messagePage->setModel(walletModel);
 
         setEncryptionStatus();
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
@@ -179,6 +194,18 @@ void WalletView::gotoSendCoinsPage(QString addr)
         sendCoinsPage->setAddress(addr);
 }
 
+void WalletView::gotoMiningPage()
+{
+    gui->getMiningAction()->setChecked(true);
+    setCurrentWidget(miningPage);
+}
+
+void WalletView::gotoMessagePage()
+{
+    gui->getMessageAction()->setChecked(true);
+    setCurrentWidget(messagePage);
+}
+
 void WalletView::gotoSignMessageTab(QString addr)
 {
     // call show() in showTab_SM()
@@ -233,7 +260,11 @@ void WalletView::encryptWallet(bool status)
 
 void WalletView::backupWallet()
 {
+#if QT_VERSION < 0x050000
     QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
     if (!filename.isEmpty()) {
         if (!walletModel->backupWallet(filename)) {
@@ -265,3 +296,10 @@ void WalletView::unlockWallet()
         dlg.exec();
     }
 }
+
+void WalletView::updatePlot()
+{
+    miningPage->updatePlot();
+    overviewPage->updatePlot();
+}
+

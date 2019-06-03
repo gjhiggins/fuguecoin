@@ -18,6 +18,8 @@ class AddressBookPage;
 class SendCoinsDialog;
 class SignVerifyMessageDialog;
 class RPCConsole;
+class MiningPage;
+class MessagePage;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -44,7 +46,7 @@ public:
     */
     void setClientModel(ClientModel *clientModel);
     /** Set the wallet model.
-        The wallet model represents a bitcoin wallet, and offers access to the list of transactions, address book and sending
+        The wallet model represents a fuguecoin wallet, and offers access to the list of transactions, address book and sending
         functionality.
     */
     void setWalletModel(WalletModel *walletModel);
@@ -63,7 +65,9 @@ private:
     AddressBookPage *addressBookPage;
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
+    MiningPage *miningPage;
     SignVerifyMessageDialog *signVerifyMessageDialog;
+    MessagePage *messagePage;
 
     TransactionView *transactionView;
 
@@ -78,6 +82,10 @@ public slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to mining page */
+    void gotoMiningPage();
+    /** Switch to message page */
+    void gotoMessagePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -99,6 +107,9 @@ public slots:
     void unlockWallet();
 
     void setEncryptionStatus();
+
+    /** Update the plot on the overview (home) page */
+    void updatePlot();
 
 signals:
     /** Signal that we want to show the main window */
