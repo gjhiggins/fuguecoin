@@ -171,7 +171,6 @@ int main(int argc, char *argv[])
 #endif
 
     Q_INIT_RESOURCE(bitcoin);
-    QApplication app(argc, argv);
 
     // Register meta types used for QMetaObject::invokeMethod
     qRegisterMetaType< bool* >();
@@ -193,6 +192,9 @@ int main(int argc, char *argv[])
     // enable automatic scaling based on the pixel density of the monitor
     qputenv( "QT_AUTO_SCREEN_SCALE_FACTOR", "1" );
 #endif
+
+    QApplication app(argc, argv);
+
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
     QApplication::setOrganizationName("FugueCoin");
