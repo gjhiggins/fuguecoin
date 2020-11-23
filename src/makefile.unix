@@ -43,6 +43,7 @@ LIBS += \
    -l boost_filesystem$(BOOST_LIB_SUFFIX) \
    -l boost_program_options$(BOOST_LIB_SUFFIX) \
    -l boost_thread$(BOOST_LIB_SUFFIX) \
+   -l boost_chrono$(BOOST_LIB_SUFFIX) \
    -l db_cxx$(BDB_LIB_SUFFIX) \
    -l ssl \
    -l crypto \
@@ -166,7 +167,7 @@ test check: test_fuguecoin FORCE
 # LevelDB support
 #
 MAKEOVERRIDES =
-LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
+LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a -lsnappy
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/include)
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
 leveldb/libleveldb.a:
