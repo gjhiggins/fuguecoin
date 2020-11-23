@@ -409,7 +409,7 @@ bool static IsValidSignatureEncoding(const std::vector<unsigned char> &sig) {
 }
 
 /* Strict DER signature verification */
-bool static CheckSignatureEncoding(const valtype &vchSig, uint flags) {
+bool static CheckSignatureEncoding(const valtype &vchSig, int flags) {
 
     // Empty signature. Not strictly DER encoded, but allowed to provide a
     // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
@@ -2347,7 +2347,7 @@ static map<std::string, opcodetype> mapOpNames;
 /* Script parser for unit tests;
  * fills out CScript from std:string, returns 1 on success or 0 on failure */ 
 bool ParseScript(const std::string &source, CScript &result) {
-    uint op;
+    int op;
 
     /* One time action */
     if(mapOpNames.empty()) {
