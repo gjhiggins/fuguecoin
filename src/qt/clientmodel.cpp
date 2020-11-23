@@ -154,9 +154,9 @@ void ClientModel::setMining(MiningType type, bool mining, int threads, int hashr
     }
     miningType = type;
     miningStarted = mining;
-//    WriteSetting("miningStarted", mining);
-//    WriteSetting("fLimitProcessors", 1);
-//    WriteSetting("nLimitProcessors", threads);
+    // WriteSetting("miningStarted", mining);
+    // WriteSetting("fLimitProcessors", 1);
+    // WriteSetting("nLimitProcessors", threads);
     emit miningChanged(mining, hashrate);
 }
 
